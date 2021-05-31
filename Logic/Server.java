@@ -23,7 +23,8 @@ public class Server {
     private ServerSocket serverSocket = null;
     private String name;
     private int port;
-    private int ready;
+    private int ready=0;
+    private boolean joinigFinished=false;
     public Server(int port)
     {
 
@@ -119,6 +120,14 @@ public class Server {
                         break;
                     }
                 }
+                joinigFinished=true;
+                for (int i=0;i<userThreads.size();i++)
+                {
+                    if(userThreads.get(i).isRegistered())
+                    {
+                        userThreads.get(i).Receive(GetAllplayers());
+                    }
+                }
         }
         catch (IOException exception) {
             System.err.println("Error about IO in serverside");
@@ -145,6 +154,34 @@ public class Server {
              playersData.add(data);
              return true;
          }
+    }
+    private String AllPlayers()
+    {
+        StringBuilder stringBuilder = new StringBuilder();
+        int j=1;
+        for (int i=0;i<playersData.size();i++)
+        {
+            stringBuilder.append((j)).append(" ").append(playersData.get(i).getUsername()).append("\n");
+        }
+        return stringBuilder.toString();
+    }
+    public String GetAllplayers()
+    {
+        if(joinigFinished)
+            return AllPlayers();
+        else
+            return null;
+    }
+    public synchronized void ReadyPlayers()
+    {
+        ready++;
+    }
+    public boolean CanStartGame()
+    {
+        if(ready==userThreads.size())
+            return true;
+        else
+            return false;
     }
     public synchronized void SendAll(String string,UserThread ut)
     {
@@ -231,6 +268,12 @@ public class Server {
                 break;
             }
         }
+    }
+    public void setJoinigFinished(boolean joinigFinished) {
+        this.joinigFinished = joinigFinished;
+    }
+    public boolean isJoinigFinished() {
+        return joinigFinished;
     }
     private void CheckTime(int sleep)
     {

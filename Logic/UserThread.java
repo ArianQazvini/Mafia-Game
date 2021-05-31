@@ -14,6 +14,7 @@ public class UserThread extends Thread{
     private DataOutputStream out =null;
     private DataInputStream in = null;
     private int sleep=0;
+    private boolean isRegistered = false;
     public UserThread(Socket socket,Server server)
     {
         this.socket = socket;
@@ -38,14 +39,24 @@ public class UserThread extends Thread{
                   out.writeUTF("Username registered");
                   Thread.sleep(500);
                   out.writeUTF("Your role is "+data.getRole().getCharacter());
+                  isRegistered = true;
                   out.writeUTF("---------------------");
-                  out.writeUTF("Are you ready? YES-NO");
-                  String answer = in.readUTF();
-                  while (!answer.equals("YES"))
+                  if(this.server.GetAllplayers()!= null)
                   {
-                      out.writeUTF("Are you ready? YES-NO");
-                      answer = in.readUTF();
+                      out.writeUTF(this.server.GetAllplayers());
                   }
+                  else
+                  {
+                      out.writeUTF("Joinig is not finished yet");
+                  }
+
+                 // out.writeUTF("Are you ready? YES-NO");
+//                  String answer = in.readUTF();
+//                  while (!answer.equals("YES"))
+//                  {
+//                      out.writeUTF("Are you ready? YES-NO");
+//                      answer = in.readUTF();
+//                  }
 
             }
             while (true)
@@ -106,6 +117,13 @@ public class UserThread extends Thread{
     public PlayerData getData() {
         return data;
     }
+    public boolean isRegistered() {
+        return isRegistered;
+    }
+    public void setRegistered(boolean registered) {
+        isRegistered = registered;
+    }
+
     @Override
     public boolean equals(Object o)
     {
