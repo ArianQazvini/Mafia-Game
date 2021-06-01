@@ -3,6 +3,7 @@ package com.company.Logic;
 import com.company.Civilians.*;
 import com.company.Mafias.GodFather;
 import com.company.Mafias.Lecter;
+import com.company.Mafias.Mafia;
 import com.company.Mafias.SimpleMafia;
 import com.company.PlayerData;
 import com.company.TimeCounter;
@@ -114,8 +115,18 @@ public class Server {
                 {
                     System.out.println("Server is waiting for player to get ready..");
                     Thread.sleep(1000);
+                    if(CanStartGame())
+                        break;
                 }
+                SendAll("---------------------------");
                 SendAll("Game is going to start");
+                SendAll("---------------------------");
+                SendAll("***Introduction night***");
+                MuteAll();
+                MafiaIntroduce();
+                Thread.sleep(300);
+                MayortoDrIntroduce();
+                UnMuteAll();
         }
         catch (IOException | InterruptedException exception) {
             System.err.println("Error about IO in serverside");
@@ -243,6 +254,62 @@ public class Server {
         }
 
     }
+    private void MafiaIntroduce()
+    {
+        StringBuilder stringBuilder = new StringBuilder();
+        for (int i=0;i<userThreads.size();i++)
+        {
+            if(userThreads.get(i).getData().getRole() instanceof Mafia)
+            {
+                stringBuilder.append(userThreads.get(i).getData().getUsername()).append(" is ").append(userThreads.get(i).getData().getRole().getCharacter()).append("\n");
+            }
+        }
+        for (int i=0;i<userThreads.size();i++)
+        {
+            if(userThreads.get(i).getData().getRole() instanceof Mafia)
+            {
+                userThreads.get(i).Receive(stringBuilder.toString());
+            }
+        }
+    }
+    private void MayortoDrIntroduce()
+    {
+        String doctor = null;
+        String mayor = null;
+        for (int i=0;i<userThreads.size();i++)
+        {
+            if(userThreads.get(i).getData().getRole().getCharacter().equals(Position.MAYOR))
+            {
+                mayor = userThreads.get(i).getData().getUsername() +" is "+ "Mayor";
+            }
+            else if(userThreads.get(i).getData().getRole().getCharacter().equals(Position.CITYDOCTOR))
+            {
+                doctor = userThreads.get(i).getData().getUsername() +" is "+ "CityDoctor";
+            }
+            if(doctor != null && mayor != null)
+            {
+                break;
+            }
+        }
+        int count =0;
+        for (int i=0;i<userThreads.size();i++)
+        {
+            if(userThreads.get(i).getData().getRole().getCharacter().equals(Position.MAYOR))
+            {
+                count++;
+                userThreads.get(i).Receive(doctor);
+            }
+            else if(userThreads.get(i).getData().getRole().getCharacter().equals(Position.CITYDOCTOR))
+            {
+                count++;
+                userThreads.get(i).Receive(mayor);
+            }
+            if(count==2)
+            {
+                break;
+            }
+        }
+    }
     private void SendAll(String msg)
     {
         for (int i=0;i<userThreads.size();i++)
@@ -275,6 +342,20 @@ public class Server {
                 userThreads.get(i).setSleep(0);
 
             }
+        }
+    }
+    public void MuteAll()
+    {
+        for (int i=0;i<userThreads.size();i++)
+        {
+            userThreads.get(i).getData().getRole().setCanChat(false);
+        }
+    }
+    public void UnMuteAll()
+    {
+        for (int i=0;i<userThreads.size();i++)
+        {
+            userThreads.get(i).getData().getRole().setCanChat(true);
         }
     }
     public void RemoveThread(UserThread thread)

@@ -50,10 +50,18 @@ public class UserThread extends Thread{
             }
             while (!canStartGame)
             {
+                Thread.sleep(1000);
+                if(canStartGame)
+                    break;
             }
-            while (true)
+            while (!data.getRole().isCanChat())
             {
-
+                Thread.sleep(500);
+                if(data.getRole().isCanChat())
+                    break;
+            }
+            while (data.getRole().isCanChat())
+            {
                 String message = in.readUTF();
                 if(message.equals("Exit"))
                 {
