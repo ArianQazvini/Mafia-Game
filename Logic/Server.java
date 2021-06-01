@@ -35,9 +35,9 @@ public class Server {
         } catch (IOException exception) {
             System.err.println("IO Error in Server Constructor");
         }
-        CreateRoles();
+
     }
-    private void CreateRoles()
+    private void CreateRoles(int number)
     {
         CityDoctor cityDoctor = new CityDoctor();
         Detective detective = new Detective();
@@ -61,25 +61,23 @@ public class Server {
         roles.add(godFather);
         roles.add(lecter);
         roles.add(simpleMafia);
+        if(number==10)
+        {}
+        else if (number>10)
+        {
+            for (int i=0;i<(number/3 -3);i++)
+            {
+                roles.add(new SimpleMafia());
+            }
+            for (int j=0;j<((number-number/3)-7);j++)
+            {
+                roles.add(new SimpleCivilian());
+            }
+        }
     }
     private Role RandomRoll()
     {
         Random random = new Random();
-        if(roles.size()==0)
-        {
-           int choice = random.nextInt(2);
-           if (choice==1)
-           {
-               roles.add(new SimpleCivilian());
-           }
-           else
-           {
-               roles.add(new SimpleMafia());
-           }
-        }
-        else
-        {
-        }
         int choice = random.nextInt(roles.size());
         Role temp = roles.get(choice);
         roles.remove(choice);
@@ -91,7 +89,11 @@ public class Server {
         Scanner scanner = new Scanner(System.in);
         try {
             System.out.println("Server is waiting on port: "+port);
-            while (count<10)
+            System.out.println("Enter number of players:");
+            int max = scanner.nextInt();
+            CreateRoles(max);
+            System.out.println("Waiting for "+max+" players to join");
+            while (count<max)
             {
                Socket socket = serverSocket.accept();
                count++;
@@ -101,35 +103,21 @@ public class Server {
                userThreads.add(temp);
                temp.start();
             }
-            System.out.println("Main characters are fixed");
-            System.out.println("Server is waiting 5 seconds for other clients");
-                serverSocket.setSoTimeout(5*1000);
-                while (true)
+            System.out.println("Everybody has joined");
+                while (!EveryBodyRegistered())
                 {
-                    try {
-                        Socket socket = serverSocket.accept();
-                        count++;
-                        System.out.println("New user connected");
-                        System.out.println("Number of Players:"+count);
-                        UserThread temp = new UserThread(socket,this);
-                        userThreads.add(temp);
-                        temp.start();
-                    }catch (SocketTimeoutException e)
-                    {
-                        System.out.println("Socket timed out");
-                        break;
-                    }
+                  Thread.sleep(500);
                 }
-                joinigFinished=true;
-                for (int i=0;i<userThreads.size();i++)
+                SendAll(GetAllplayers()+"All players");
+                AskReady();
+                while (!CanStartGame())
                 {
-                    if(userThreads.get(i).isRegistered())
-                    {
-                        userThreads.get(i).Receive(GetAllplayers());
-                    }
+                    System.out.println("Server is waiting for player to get ready..");
+                    Thread.sleep(1000);
                 }
+                SendAll("Game is going to start");
         }
-        catch (IOException exception) {
+        catch (IOException | InterruptedException exception) {
             System.err.println("Error about IO in serverside");
         }
     }
@@ -155,13 +143,42 @@ public class Server {
              return true;
          }
     }
+    public void Register(UserThread ut)
+    {
+        for (int i=0;i<userThreads.size();i++)
+        {
+            if(userThreads.get(i).equals(ut))
+            {
+                userThreads.get(i).setRegistered(true);
+                ut.setRegistered(true);
+                break;
+            }
+        }
+    }
+    private boolean EveryBodyRegistered()
+    {
+        int count = 0;
+        for (int i=0;i<userThreads.size();i++)
+        {
+            if(userThreads.get(i).isRegistered())
+                count++;
+        }
+        if(count==userThreads.size())
+        {
+            setJoinigFinished(true);
+            return true;
+        }
+        else
+            return false;
+    }
     private String AllPlayers()
     {
         StringBuilder stringBuilder = new StringBuilder();
         int j=1;
         for (int i=0;i<playersData.size();i++)
         {
-            stringBuilder.append((j)).append(" ").append(playersData.get(i).getUsername()).append("\n");
+            stringBuilder.append((j)).append("-").append(playersData.get(i).getUsername()).append("\n");
+            j++;
         }
         return stringBuilder.toString();
     }
@@ -172,9 +189,26 @@ public class Server {
         else
             return null;
     }
-    public synchronized void ReadyPlayers()
+    public synchronized void Ready()
     {
         ready++;
+    }
+    private void ThreadsAskready(int num)
+    {
+        Thread thread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    userThreads.get(num).AskReady();
+                }
+            });
+        thread.start();
+    }
+    private void AskReady()
+    {
+        for (int i=0;i<userThreads.size();i++)
+        {
+            ThreadsAskready(i);
+        }
     }
     public boolean CanStartGame()
     {
@@ -288,3 +322,21 @@ public class Server {
     }
 
 }
+//            System.out.println("Server is waiting 5 seconds for other clients");
+//                serverSocket.setSoTimeout(5*1000);
+//                while (true)
+//                {
+//                    try {
+//                        Socket socket = serverSocket.accept();
+//                        count++;
+//                        System.out.println("New user connected");
+//                        System.out.println("Number of Players:"+count);
+//                        UserThread temp = new UserThread(socket,this);
+//                        userThreads.add(temp);
+//                        temp.start();
+//                    }catch (SocketTimeoutException e)
+//                    {
+//                        System.out.println("Socket timed out");
+//                        break;
+//                    }
+//                }

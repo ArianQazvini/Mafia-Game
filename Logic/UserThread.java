@@ -15,6 +15,7 @@ public class UserThread extends Thread{
     private DataInputStream in = null;
     private int sleep=0;
     private boolean isRegistered = false;
+    private boolean canStartGame= false;
     public UserThread(Socket socket,Server server)
     {
         this.socket = socket;
@@ -37,27 +38,18 @@ public class UserThread extends Thread{
                       username = in.readUTF();
                   }
                   out.writeUTF("Username registered");
-                  Thread.sleep(500);
+//                  Thread.sleep(500);
                   out.writeUTF("Your role is "+data.getRole().getCharacter());
-                  isRegistered = true;
+                  this.server.Register(this);
                   out.writeUTF("---------------------");
-                  if(this.server.GetAllplayers()!= null)
+                  Thread.sleep(500);
+                  if(!server.isJoinigFinished())
                   {
-                      out.writeUTF(this.server.GetAllplayers());
+                      out.writeUTF("Other players joining or registering is not finished yet!");
                   }
-                  else
-                  {
-                      out.writeUTF("Joinig is not finished yet");
-                  }
-
-                 // out.writeUTF("Are you ready? YES-NO");
-//                  String answer = in.readUTF();
-//                  while (!answer.equals("YES"))
-//                  {
-//                      out.writeUTF("Are you ready? YES-NO");
-//                      answer = in.readUTF();
-//                  }
-
+            }
+            while (!canStartGame)
+            {
             }
             while (true)
             {
@@ -73,7 +65,7 @@ public class UserThread extends Thread{
                 this.server.SendAll(message,this);
             }
         }
-        catch (IOException | InterruptedException io)
+        catch (IOException | InterruptedException e)
         {
             System.err.println("Something went wrong about IO-UserThread");
         }
@@ -103,7 +95,26 @@ public class UserThread extends Thread{
             System.err.println("Error in Receive");
         }
     }
+    public void AskReady()
+    {
+        try{
+            this.out.writeUTF("Are you ready? YES-NO");
+            String answer = this.in.readUTF();
+            while (!answer.equals("YES"))
+            {
+                this.out.writeUTF("Are you ready? YES-NO");
+                answer = in.readUTF();
+            }
+            this.server.Ready();
+            canStartGame = true;
+            Thread.sleep(400);
+        }
+        catch (IOException | InterruptedException e)
+        {
+            System.out.println("Error in AskReady method");
+        }
 
+    }
     public void setSleep(int sleep) {
         this.sleep = sleep;
     }
@@ -123,7 +134,6 @@ public class UserThread extends Thread{
     public void setRegistered(boolean registered) {
         isRegistered = registered;
     }
-
     @Override
     public boolean equals(Object o)
     {

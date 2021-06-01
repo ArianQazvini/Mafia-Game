@@ -18,22 +18,6 @@ public class Player {
         try {
 
             connection = new Socket(ip,port );
-            Read();
-            Send();
-
-        }catch (ConnectException e)
-        {
-            try {
-                Thread.sleep(2*1000L);
-                connection = new Socket(ip,port);
-                if(connection==null)
-                {
-                    System.out.println("Can't connect");
-                }
-
-            } catch (InterruptedException | IOException interruptedException) {
-                System.err.println("Error while connecting again to socket or while sleeping");
-            }
         }
         catch (IOException exception) {
             System.err.println("IO Error -Player constructor");
@@ -41,8 +25,8 @@ public class Player {
     }
     public void startPlayer()
     {
-        this.read.start();
-        this.send.start();
+       Read();
+       Send();
     }
     public void Send()
     {
@@ -74,7 +58,7 @@ public class Player {
                 }
             }
         });
-
+        this.send.start();
     }
     public void Read()
     {
@@ -106,6 +90,7 @@ public class Player {
                 }
             }
         });
+        this.read.start();
     }
 
 }
