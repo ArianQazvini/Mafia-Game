@@ -6,6 +6,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.net.SocketException;
 
 public class UserThread extends Thread{
     private PlayerData data;
@@ -60,7 +61,7 @@ public class UserThread extends Thread{
                 if(data.getRole().isCanChat())
                     break;
             }
-            while (data.getRole().isCanChat())
+            while (true)
             {
                 String message = in.readUTF();
                 if(message.equals("Exit"))
@@ -72,6 +73,11 @@ public class UserThread extends Thread{
                 }
                 this.server.SendAll(message,this);
             }
+        }
+        catch (SocketException e)
+        {
+            this.server.RemoveThread(this);
+
         }
         catch (IOException | InterruptedException e)
         {

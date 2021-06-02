@@ -4,18 +4,20 @@ import com.company.Logic.Position;
 
 public class Role {
     private String type;
+    private String anouncement;
     private boolean shield;
     private boolean isAlive;
     private boolean canChat;
     private boolean shooted;
     private Position character;
-    public Role(String type, Position character) {
+    public Role(String type, Position character,String anouncement) {
         this.type = type;
         this.shield = false;
         this.isAlive = true;
         this.canChat = true;
         this.shooted = false;
         this.character = character;
+        this.anouncement =anouncement;
     }
     public String getType() {
         return type;
@@ -62,5 +64,12 @@ public class Role {
 
     public void setCharacter(Position character) {
         this.character = character;
+    }
+
+    public void setAnouncement(String anouncement) {
+        this.anouncement = anouncement;
+    }
+    public String getAnouncement() {
+        return anouncement;
     }
 }

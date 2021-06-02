@@ -127,6 +127,10 @@ public class Server {
                 Thread.sleep(300);
                 MayortoDrIntroduce();
                 UnMuteAll();
+                SendAll("Mafia is going to wake up...");
+                MuteAll();
+                Thread.sleep(300);
+                UnMuteMafia();
         }
         catch (IOException | InterruptedException exception) {
             System.err.println("Error about IO in serverside");
@@ -228,15 +232,15 @@ public class Server {
         else
             return false;
     }
-    public synchronized void SendAll(String string,UserThread ut)
+    public void SendAll(String string,UserThread ut)
     {
         if(!ut.getData().getRole().isCanChat())
         {
-            ut.Receive("You can't send message cause you  are muted");
+            ut.Receive("You can't send messages cause you are muted or sleeping");
         }
         else
         {
-            ut.Receive("You sent: "+string+"✓✓");
+            ut.Receive("You : "+string+"✓✓");
             for (int i=0;i<userThreads.size();i++)
             {
                 if(userThreads.get(i).equals(ut))
@@ -246,7 +250,7 @@ public class Server {
                 {
                     if (userThreads.get(i).getData().getRole().isCanChat())
                     {
-                        userThreads.get(i).Receive(ut.getData().getUsername()+" sent: "+string);
+                        userThreads.get(i).Receive(ut.getData().getUsername()+" : "+string);
                     }
                 }
 
@@ -351,11 +355,21 @@ public class Server {
             userThreads.get(i).getData().getRole().setCanChat(false);
         }
     }
-    public void UnMuteAll()
+    private void UnMuteAll()
     {
         for (int i=0;i<userThreads.size();i++)
         {
             userThreads.get(i).getData().getRole().setCanChat(true);
+        }
+    }
+    private void UnMuteMafia()
+    {
+        for (int i=0;i<userThreads.size();i++)
+        {
+            if(userThreads.get(i).getData().getRole() instanceof Mafia)
+            {
+                userThreads.get(i).getData().getRole().setCanChat(true);
+            }
         }
     }
     public void RemoveThread(UserThread thread)

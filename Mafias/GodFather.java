@@ -6,5 +6,6 @@ public class GodFather extends Mafia {
     public GodFather()
     {
         super(Position.GODFATHER);
+        super.setAnouncement("-");
     }
 }

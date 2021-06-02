@@ -6,6 +6,6 @@ import com.company.Logic.Role;
 public class Mafia extends Role {
     public Mafia(Position position)
     {
-        super("Mafia",position);
+        super("Mafia",position,"+");
     }
 }
