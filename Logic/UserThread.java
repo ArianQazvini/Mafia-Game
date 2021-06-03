@@ -1,6 +1,8 @@
 package com.company.Logic;
 
+import com.company.Civilians.CityDoctor;
 import com.company.Civilians.Civilian;
+import com.company.Mafias.Lecter;
 import com.company.Mafias.Mafia;
 import com.company.PlayerData;
 
@@ -73,24 +75,204 @@ public class UserThread extends Thread{
                     choosenPlayer= message;
                     if(this.getData().getRole().getCharacter().equals(Position.GODFATHER))
                     {
+                        while (this.server.GetPlayer(choosenPlayer).getData().getRole()==null)
+                        {
+                            out.writeUTF("Not valid player");
+                            message = in.readUTF();
+                            choosenPlayer=message;
+                        }
                         while (this.server.GetPlayer(choosenPlayer).getData().getRole() instanceof Mafia)
                         {
                             out.writeUTF("You must choose from civilians");
                             message = in.readUTF();
                             choosenPlayer=message;
                         }
+                        ChoosePlayer();
+                        ChoosePlayerMode = false;
                     }
                     else if (this.getData().getRole().getCharacter().equals(Position.LECTER))
                     {
-                        while (this.server.GetPlayer(choosenPlayer).getData().getRole() instanceof Civilian)
+                        while (this.server.GetPlayer(choosenPlayer).getData().getRole()==null)
                         {
-                            out.writeUTF("You must choose from mafis");
+                            out.writeUTF("Not valid player");
                             message = in.readUTF();
                             choosenPlayer=message;
                         }
+                        while (this.server.GetPlayer(choosenPlayer).getData().getRole() instanceof Civilian)
+                        {
+                            out.writeUTF("You must choose from mafias");
+                            message = in.readUTF();
+                            choosenPlayer=message;
+                        }
+                        if(this.server.GetPlayer(choosenPlayer).getData().getRole().getCharacter().equals(Position.LECTER))
+                        {
+                            Lecter temp = (Lecter) this.data.getRole();
+                            if(temp.getSelfHeal()==0)
+                            {
+                                temp.SelfHeal();
+                            }
+                            else
+                            {
+                                out.writeUTF("You have healed yourself once before-Choose someone else");
+                                message = in.readUTF();
+                                choosenPlayer=message;
+                                while (this.server.GetPlayer(choosenPlayer).getData().getRole().getCharacter().equals(Position.LECTER))
+                                {
+                                    out.writeUTF("You have healed yourself once before-Choose someone else");
+                                    message = in.readUTF();
+                                    choosenPlayer=message;
+                                }
+                            }
+                        }
+                        ChoosePlayer();
+                        ChoosePlayerMode = false;
                     }
-                    ChoosePlayer();
-                    ChoosePlayerMode = false;
+                    else if (this.getData().getRole().getCharacter().equals(Position.CITYDOCTOR))
+                    {
+                        while (this.server.GetPlayer(choosenPlayer).getData().getRole()==null)
+                        {
+                            out.writeUTF("Not valid player");
+                            message = in.readUTF();
+                            choosenPlayer=message;
+                        }
+                        if(this.server.GetPlayer(choosenPlayer).getData().getRole().getCharacter().equals(Position.CITYDOCTOR))
+                        {
+                            CityDoctor temp = (CityDoctor) this.data.getRole();
+                            if(temp.getSelfHeal()==0)
+                            {
+                                temp.SelfHeal();
+                            }
+                            else
+                            {
+                                out.writeUTF("You have healed yourself once before-Choose someone else");
+                                message = in.readUTF();
+                                choosenPlayer=message;
+                                while (this.server.GetPlayer(choosenPlayer).getData().getRole().getCharacter().equals(Position.CITYDOCTOR))
+                                {
+                                    out.writeUTF("You have healed yourself once before-Choose someone else");
+                                    message = in.readUTF();
+                                    choosenPlayer=message;
+                                }
+                            }
+                        }
+                        ChoosePlayer();
+                        ChoosePlayerMode = false;
+                    }
+                    else if(this.getData().getRole().getCharacter().equals(Position.DETECTIVE))
+                    {
+                        while (this.server.GetPlayer(choosenPlayer).getData().getRole()==null)
+                        {
+                            out.writeUTF("Not valid player");
+                            message = in.readUTF();
+                            choosenPlayer=message;
+                        }
+                        if(this.server.GetPlayer(choosenPlayer).getData().getRole().getCharacter().equals(Position.DETECTIVE))
+                        {
+                            out.writeUTF("You choosed yourself !!!");
+                            message = in.readUTF();
+                            choosenPlayer=message;
+                            while (this.server.GetPlayer(choosenPlayer).getData().getRole().getCharacter().equals(Position.DETECTIVE))
+                            {
+                                out.writeUTF("You choosed yourself !!!");
+                                message = in.readUTF();
+                                choosenPlayer=message;
+                            }
+                        }
+                        ChoosePlayer();
+                        ChoosePlayerMode = false;
+                    }
+                    else if(this.getData().getRole().getCharacter().equals(Position.PROFESSIONAL))
+                    {
+
+                        out.writeUTF("Do you want to use your ability?Yes-No");
+                        String response = in.readUTF();
+                        if(response.equals("Yes"))
+                        {
+                            while (this.server.GetPlayer(choosenPlayer).getData().getRole()==null)
+                            {
+                                out.writeUTF("Not valid player");
+                                message = in.readUTF();
+                                choosenPlayer=message;
+                            }
+                            if(this.server.GetPlayer(choosenPlayer).getData().getRole().getCharacter().equals(Position.PROFESSIONAL))
+                            {
+                                out.writeUTF("You choosed yourself !!!");
+                                message = in.readUTF();
+                                choosenPlayer=message;
+                                while (this.server.GetPlayer(choosenPlayer).getData().getRole().getCharacter().equals(Position.PROFESSIONAL))
+                                {
+                                    out.writeUTF("You choosed yourself !!!");
+                                    message = in.readUTF();
+                                    choosenPlayer=message;
+                                }
+                            }
+                            ChoosePlayer();
+                            ChoosePlayerMode = false;
+                        }
+                        else
+                        {
+                            ChoosePlayerMode=false;
+                        }
+                    }
+                    else if(this.getData().getRole().getCharacter().equals(Position.PSYCHOLOGIST))
+                    {
+                        out.writeUTF("Do you want to use your ability?Yes-No");
+                        String response = in.readUTF();
+                        if(response.equals("Yes"))
+                        {
+                            while (this.server.GetPlayer(choosenPlayer).getData().getRole()==null)
+                            {
+                                out.writeUTF("Not valid player");
+                                message = in.readUTF();
+                                choosenPlayer=message;
+                            }
+                            if(this.server.GetPlayer(choosenPlayer).getData().getRole().getCharacter().equals(Position.PSYCHOLOGIST))
+                            {
+                                out.writeUTF("You choosed yourself !!!");
+                                message = in.readUTF();
+                                choosenPlayer=message;
+                                while (this.server.GetPlayer(choosenPlayer).getData().getRole().getCharacter().equals(Position.PSYCHOLOGIST))
+                                {
+                                    out.writeUTF("You choosed yourself !!!");
+                                    message = in.readUTF();
+                                    choosenPlayer=message;
+                                }
+                            }
+                            ChoosePlayer();
+                            ChoosePlayerMode = false;
+                        }
+                        else
+                        {
+                            ChoosePlayerMode=false;
+                        }
+
+                    }
+                    else if(this.getData().getRole().getCharacter().equals(Position.DIEHARD))
+                    {
+                        out.writeUTF("Do you want to use your ability?Yes-No");
+                        String response = in.readUTF();
+                        if(response.equals("Yes"))
+                        {
+                            if(this.server.GetPlayer(choosenPlayer).getData().getRole().getCharacter().equals(Position.DIEHARD))
+                            {
+                                out.writeUTF("You choosed yourself !!!");
+                                message = in.readUTF();
+                                choosenPlayer=message;
+                                while (this.server.GetPlayer(choosenPlayer).getData().getRole().getCharacter().equals(Position.DIEHARD))
+                                {
+                                    out.writeUTF("You choosed yourself !!!");
+                                    message = in.readUTF();
+                                    choosenPlayer=message;
+                                }
+                            }
+                            ChoosePlayer();
+                            ChoosePlayerMode = false;
+                        }
+                        else
+                        {
+                            ChoosePlayerMode=false;
+                        }
+                    }
                     if(message.equals("Exit"))
                     {
                         out.writeUTF("Close");

@@ -8,6 +8,7 @@ import com.company.Mafias.SimpleMafia;
 import com.company.PlayerData;
 import com.company.TimeCounter;
 
+import javax.crypto.Cipher;
 import java.awt.*;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -15,17 +16,20 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
+import java.sql.PreparedStatement;
 import java.util.*;
 
 public class Server {
     private ArrayList<PlayerData> playersData = new ArrayList<>();
     private ArrayList<UserThread> userThreads = new ArrayList<>();
+    private ArrayList<UserThread> Dead = new ArrayList<>();
     private ArrayList<Role> roles = new ArrayList<>();
     private ServerSocket serverSocket = null;
     private String name;
     private int port;
     private int ready=0;
     private boolean joinigFinished=false;
+    private UserThread PsychologistChoice=null;
     public Server(int port)
     {
 
@@ -133,6 +137,7 @@ public class Server {
                 CheckTime(10);
                 MuteAll();
                 GodFather();
+                DrLecter();
         }
         catch (IOException | InterruptedException exception) {
             System.err.println("Error about IO in serverside");
@@ -192,10 +197,13 @@ public class Server {
     {
         StringBuilder stringBuilder = new StringBuilder();
         int j=1;
-        for (int i=0;i<playersData.size();i++)
+        for (int i=0;i<userThreads.size();i++)
         {
-            stringBuilder.append((j)).append("-").append(playersData.get(i).getUsername()).append("\n");
-            j++;
+            if(userThreads.get(i).getData().getRole().isAlive())
+            {
+                stringBuilder.append((j)).append("-").append(userThreads.get(i).getData().getUsername()).append("\n");
+                j++;
+            }
         }
         return stringBuilder.toString();
     }
@@ -330,7 +338,7 @@ public class Server {
     {
         for (int i=0;i<userThreads.size();i++)
         {
-            if(userThreads.get(i).getData().getUsername().equals(name))
+            if(userThreads.get(i).getData().getUsername().equals(name) && userThreads.get(i).getData().getRole().isAlive())
             {
                 return userThreads.get(i);
             }
@@ -364,7 +372,150 @@ public class Server {
             }
         }
     }
+    private void DrLecter()
+    {
+        for (int i=0;i<userThreads.size();i++)
+        {
+            if(userThreads.get(i).getData().getRole().getCharacter().equals(Position.LECTER))
+            {
+                userThreads.get(i).Receive("Choose the Mafia you want to save");
+                userThreads.get(i).setChoosePlayerMode(true);
+                Lecter temp = (Lecter) userThreads.get(i).getData().getRole();
+                while (userThreads.get(i).ChoosePlayer()==null)
+                {
+                    try {
+                        Thread.sleep(500);
+                    } catch (InterruptedException e) {
+                        System.err.println("InterruptedException");
+                    }
+                }
+                UserThread help = GetPlayer(userThreads.get(i).ChoosePlayer());
+                if(help != null )
+                {
+                    temp.action(help);
+                }
+                userThreads.get(i).Receive("Done");
+                break;
+            }
+        }
+    }
+    private void CityDoctor()
+    {
+        for (int i=0;i<userThreads.size();i++)
+        {
+            if(userThreads.get(i).getData().getRole().getCharacter().equals(Position.CITYDOCTOR))
+            {
+                userThreads.get(i).Receive("Choose the player you want to save");
+                userThreads.get(i).setChoosePlayerMode(true);
+                CityDoctor temp = (CityDoctor) userThreads.get(i).getData().getRole();
+                while (userThreads.get(i).ChoosePlayer()==null)
+                {
+                    try {
+                        Thread.sleep(500);
+                    } catch (InterruptedException e) {
+                        System.err.println("InterruptedException");
+                    }
+                }
+                UserThread help = GetPlayer(userThreads.get(i).ChoosePlayer());
+                if(help != null )
+                {
+                    temp.action(help);
+                }
+                userThreads.get(i).Receive("Done");
+                break;
+            }
+        }
+    }
+    private void Professional()
+    {
+        for (int i=0;i<userThreads.size();i++)
+        {
+            if(userThreads.get(i).getData().getRole().getCharacter().equals(Position.PROFESSIONAL))
+            {
+                userThreads.get(i).Receive("Choose the player you want to save");
+                userThreads.get(i).setChoosePlayerMode(true);
+                Professional temp = (Professional) userThreads.get(i).getData().getRole();
+                while (userThreads.get(i).ChoosePlayer()==null)
+                {
+                    try {
+                        Thread.sleep(500);
+                    } catch (InterruptedException e) {
+                        System.err.println("InterruptedException");
+                    }
+                }
+                UserThread help = GetPlayer(userThreads.get(i).ChoosePlayer());
+                if(help != null )
+                {
+                    temp.action(help);
+                }
+                userThreads.get(i).Receive("Done");
+                break;
+            }
+        }
+    }
+    private void Psychologist()
+    {
+        for (int i=0;i<userThreads.size();i++)
+        {
+            if(userThreads.get(i).getData().getRole().getCharacter().equals(Position.PSYCHOLOGIST))
+            {
+                userThreads.get(i).Receive("Choose the player you want to save");
+                userThreads.get(i).setChoosePlayerMode(true);
+                Psychologist temp = (Psychologist) userThreads.get(i).getData().getRole();
+                while (userThreads.get(i).ChoosePlayer()==null)
+                {
+                    try {
+                        Thread.sleep(500);
+                    } catch (InterruptedException e) {
+                        System.err.println("InterruptedException");
+                    }
+                }
+                UserThread help = GetPlayer(userThreads.get(i).ChoosePlayer());
+                this.PsychologistChoice = help;
+                if(help != null )
+                {
+                    temp.action(help);
+                }
+                userThreads.get(i).Receive("Done");
+                break;
+            }
+        }
+    }
+    private void DieHard()
+    {
+        for (int i=0;i<userThreads.size();i++)
+        {
+            if(userThreads.get(i).getData().getRole().getCharacter().equals(Position.DIEHARD))
+            {
+                userThreads.get(i).Receive("Choose the player you want to save");
+                userThreads.get(i).setChoosePlayerMode(true);
+                DieHard temp = (DieHard) userThreads.get(i).getData().getRole();
+                while (userThreads.get(i).ChoosePlayer()==null)
+                {
+                    try {
+                        Thread.sleep(500);
+                    } catch (InterruptedException e) {
+                        System.err.println("InterruptedException");
+                    }
+                }
+                UserThread help = GetPlayer(userThreads.get(i).ChoosePlayer());
+                this.PsychologistChoice = help;
+                if(help != null )
+                {
+                    temp.action(help);
+                }
+                userThreads.get(i).Receive("Done");
+                break;
+            }
+        }
+    }
+    private void UpdateDead()
+    {
+          for (int i=0;i<userThreads.size();i++)
+          {
 
+          }
+    }
     public void Mute(String name,int sleep)
     {
         for (int i=0;i<userThreads.size();i++)
@@ -456,23 +607,32 @@ public class Server {
         }
         timer.cancel();
     }
-
+    private String Ended()
+    {
+        int countMafia=0;
+        int countCivilian=0;
+        for (int i=0;i<userThreads.size();i++)
+        {
+            if(userThreads.get(i).getData().getRole() instanceof Mafia)
+            {
+                countMafia++;
+            }
+            else
+            {
+                countCivilian++;
+            }
+        }
+        if(countMafia==0)
+        {
+            return "Civilians";
+        }
+        else if(countMafia >= countCivilian)
+        {
+            return "Mafia";
+        }
+        else
+        {
+            return null;
+        }
+    }
 }
-//            System.out.println("Server is waiting 5 seconds for other clients");
-//                serverSocket.setSoTimeout(5*1000);
-//                while (true)
-//                {
-//                    try {
-//                        Socket socket = serverSocket.accept();
-//                        count++;
-//                        System.out.println("New user connected");
-//                        System.out.println("Number of Players:"+count);
-//                        UserThread temp = new UserThread(socket,this);
-//                        userThreads.add(temp);
-//                        temp.start();
-//                    }catch (SocketTimeoutException e)
-//                    {
-//                        System.out.println("Socket timed out");
-//                        break;
-//                    }
-//                }
