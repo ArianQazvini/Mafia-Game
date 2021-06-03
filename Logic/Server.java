@@ -126,11 +126,13 @@ public class Server {
                 MafiaIntroduce();
                 Thread.sleep(300);
                 MayortoDrIntroduce();
-                UnMuteAll();
                 SendAll("Mafia is going to wake up...");
-                MuteAll();
                 Thread.sleep(300);
                 UnMuteMafia();
+                SendAll("You got only 10 seconds for chatting");
+                CheckTime(10);
+                MuteAll();
+                GodFather();
         }
         catch (IOException | InterruptedException exception) {
             System.err.println("Error about IO in serverside");
@@ -324,6 +326,45 @@ public class Server {
             }
         }
     }
+    public UserThread GetPlayer(String name)
+    {
+        for (int i=0;i<userThreads.size();i++)
+        {
+            if(userThreads.get(i).getData().getUsername().equals(name))
+            {
+                return userThreads.get(i);
+            }
+        }
+        return null;
+    }
+    private void GodFather()
+    {
+        for (int i=0;i<userThreads.size();i++)
+        {
+            if(userThreads.get(i).getData().getRole().getCharacter().equals(Position.GODFATHER))
+            {
+                userThreads.get(i).Receive("Choose the civilian you want to kill");
+                userThreads.get(i).setChoosePlayerMode(true);
+                GodFather temp = (GodFather) userThreads.get(i).getData().getRole();
+                while (userThreads.get(i).ChoosePlayer()==null)
+                {
+                    try {
+                        Thread.sleep(500);
+                    } catch (InterruptedException e) {
+                        System.err.println("InterruptedException");
+                    }
+                }
+                UserThread help = GetPlayer(userThreads.get(i).ChoosePlayer());
+                if(help != null )
+                {
+                    temp.action(help);
+                }
+                userThreads.get(i).Receive("Done");
+                break;
+            }
+        }
+    }
+
     public void Mute(String name,int sleep)
     {
         for (int i=0;i<userThreads.size();i++)
@@ -404,12 +445,12 @@ public class Server {
     public boolean isJoinigFinished() {
         return joinigFinished;
     }
-    private void CheckTime(int sleep)
+    private void CheckTime(int seconds)
     {
         Timer timer = new Timer();
         timer.schedule(new TimeCounter(),0,1000);
         try {
-            Thread.sleep(sleep* 1000L);
+            Thread.sleep(seconds* 1000L);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

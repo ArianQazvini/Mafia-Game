@@ -1,5 +1,7 @@
 package com.company.Logic;
 
+import com.company.Civilians.Civilian;
+import com.company.Mafias.Mafia;
 import com.company.PlayerData;
 
 import java.io.DataInputStream;
@@ -17,6 +19,8 @@ public class UserThread extends Thread{
     private int sleep=0;
     private boolean isRegistered = false;
     private boolean canStartGame= false;
+    private boolean ChoosePlayerMode = false;
+    private String choosenPlayer = null;
     public UserThread(Socket socket,Server server)
     {
         this.socket = socket;
@@ -64,14 +68,48 @@ public class UserThread extends Thread{
             while (true)
             {
                 String message = in.readUTF();
-                if(message.equals("Exit"))
+                if(ChoosePlayerMode)
                 {
-                    out.writeUTF("Close");
-                    socket.close();
-                    server.RemoveThread(this);
-                    break;
+                    choosenPlayer= message;
+                    if(this.getData().getRole().getCharacter().equals(Position.GODFATHER))
+                    {
+                        while (this.server.GetPlayer(choosenPlayer).getData().getRole() instanceof Mafia)
+                        {
+                            out.writeUTF("You must choose from civilians");
+                            message = in.readUTF();
+                            choosenPlayer=message;
+                        }
+                    }
+                    else if (this.getData().getRole().getCharacter().equals(Position.LECTER))
+                    {
+                        while (this.server.GetPlayer(choosenPlayer).getData().getRole() instanceof Civilian)
+                        {
+                            out.writeUTF("You must choose from mafis");
+                            message = in.readUTF();
+                            choosenPlayer=message;
+                        }
+                    }
+                    ChoosePlayer();
+                    ChoosePlayerMode = false;
+                    if(message.equals("Exit"))
+                    {
+                        out.writeUTF("Close");
+                        socket.close();
+                        server.RemoveThread(this);
+                        break;
+                    }
                 }
-                this.server.SendAll(message,this);
+                else
+                {
+                    if(message.equals("Exit"))
+                    {
+                        out.writeUTF("Close");
+                        socket.close();
+                        server.RemoveThread(this);
+                        break;
+                    }
+                    this.server.SendAll(message,this);
+                }
             }
         }
         catch (SocketException e)
@@ -129,6 +167,10 @@ public class UserThread extends Thread{
         }
 
     }
+    public String ChoosePlayer()
+    {
+            return choosenPlayer;
+    }
     public void setSleep(int sleep) {
         this.sleep = sleep;
     }
@@ -147,6 +189,12 @@ public class UserThread extends Thread{
     }
     public void setRegistered(boolean registered) {
         isRegistered = registered;
+    }
+    public void setChoosePlayerMode(boolean choosePlayerMode) {
+        ChoosePlayerMode = choosePlayerMode;
+    }
+    public boolean isChoosePlayerMode() {
+        return ChoosePlayerMode;
     }
     @Override
     public boolean equals(Object o)

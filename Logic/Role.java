@@ -5,17 +5,14 @@ import com.company.Logic.Position;
 public class Role {
     private String type;
     private String anouncement;
-    private boolean shield;
+    private boolean GotShot=false;
     private boolean isAlive;
     private boolean canChat;
-    private boolean shooted;
     private Position character;
     public Role(String type, Position character,String anouncement) {
         this.type = type;
-        this.shield = false;
         this.isAlive = true;
         this.canChat = true;
-        this.shooted = false;
         this.character = character;
         this.anouncement =anouncement;
     }
@@ -25,39 +22,29 @@ public class Role {
     public void setType(String type) {
         this.type = type;
     }
-
-    public boolean isShield() {
-        return shield;
-    }
-
-    public void setShield(boolean shield) {
-        this.shield = shield;
-    }
-
     public boolean isAlive() {
+        if(isGotShot())
+        {
+            isAlive=false;
+        }
+        else
+        {
+            isAlive= true;
+        }
         return isAlive;
     }
-
     public void setAlive(boolean alive) {
         isAlive = alive;
     }
-
     public boolean isCanChat() {
         return canChat;
     }
-
     public void setCanChat(boolean canChat) {
         this.canChat = canChat;
     }
-
-    public boolean isShooted() {
-        return shooted;
+    public void Shooted() {
+        setGotShot(true);
     }
-
-    public void setShooted(boolean shot) {
-        this.shooted = shot;
-    }
-
     public Position getCharacter() {
         return character;
     }
@@ -71,5 +58,15 @@ public class Role {
     }
     public String getAnouncement() {
         return anouncement;
+    }
+    public void setGotShot(boolean gotShot) {
+        GotShot = gotShot;
+    }
+    public boolean isGotShot() {
+        return GotShot;
+    }
+    public void Heal()
+    {
+        setGotShot(false);
     }
 }
