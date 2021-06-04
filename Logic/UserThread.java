@@ -76,43 +76,67 @@ public class UserThread extends Thread{
                 {
                     if(this.getData().getRole().getCharacter().equals(Position.GODFATHER))
                     {
-                        while (this.server.GetPlayer(message).getData().getRole() instanceof Mafia || this.server.GetPlayer(message)==null)
+                        boolean validity = false;
+                        while (!validity)
                         {
-                            out.writeUTF("Not valid player-(either you choosed civilians or a player not in list");
-                            message = in.readUTF();
-                        }
-                        choosenPlayer=message;
-                        ChoosePlayer();
-                        ChoosePlayerMode = false;
-                    }
-                    else if (this.getData().getRole().getCharacter().equals(Position.LECTER))
-                    {
-                        while (this.server.GetPlayer(message).getData().getRole() instanceof Civilian || this.server.GetPlayer(message)==null)
-                        {
-                            out.writeUTF("Not valid player-(either you choosed mafis or a player not in list");
-                            message = in.readUTF();
-                        }
-                        if(this.server.GetPlayer(message).getData().getRole().getCharacter().equals(Position.LECTER))
-                        {
-                            Lecter temp = (Lecter) this.data.getRole();
-                            if(temp.getSelfHeal()==0)
+                            if(this.server.GetPlayer(message)==null)
                             {
-                                temp.SelfHeal();
+                                out.writeUTF("Player is not in list");
+                            }
+                            else if(this.server.GetPlayer(message).getData().getRole() instanceof Mafia)
+                            {
+                                out.writeUTF("Choose from civilians");
                             }
                             else
                             {
-                                out.writeUTF("You have healed yourself once before-Choose someone else");
-                                message = in.readUTF();
-                                while (this.server.GetPlayer(message).getData().getRole().getCharacter().equals(Position.LECTER))
-                                {
-                                    out.writeUTF("You have healed yourself once before-Choose someone else");
-                                    message = in.readUTF();
-                                }
+                                choosenPlayer=message;
+                                ChoosePlayer();
+                                ChoosePlayerMode = false;
+                                validity=true;
                             }
+                            message=in.readUTF();
                         }
-                        choosenPlayer=message;
-                        ChoosePlayer();
-                        ChoosePlayerMode = false;
+                    }
+                    else if (this.getData().getRole().getCharacter().equals(Position.LECTER))
+                    {
+                        boolean validity = false;
+                        while (!validity)
+                        {
+                            if(this.server.GetPlayer(message)==null)
+                            {
+                                out.writeUTF("Player is not in list");
+                            }
+                            else if(this.server.GetPlayer(message).getData().getRole() instanceof Civilian)
+                            {
+                                out.writeUTF("Choose from mafias");
+                            }
+                            else
+                            {
+                                if(this.server.GetPlayer(message).getData().getRole().getCharacter().equals(Position.LECTER))
+                                {
+                                    Lecter temp = (Lecter) this.data.getRole();
+                                    if(temp.getSelfHeal()==0)
+                                    {
+                                        temp.SelfHeal();
+                                    }
+                                    else
+                                    {
+                                        out.writeUTF("You have healed yourself once before-Choose someone else");
+                                        message = in.readUTF();
+                                        while (this.server.GetPlayer(message).getData().getRole().getCharacter().equals(Position.LECTER))
+                                        {
+                                            out.writeUTF("You have healed yourself once before-Choose someone else");
+                                            message = in.readUTF();
+                                        }
+                                    }
+                                }
+                                choosenPlayer=message;
+                                ChoosePlayer();
+                                ChoosePlayerMode = false;
+                                validity=true;
+                            }
+                            message=in.readUTF();
+                        }
                     }
                     else if (this.getData().getRole().getCharacter().equals(Position.CITYDOCTOR))
                     {
@@ -145,14 +169,25 @@ public class UserThread extends Thread{
                     }
                     else if(this.getData().getRole().getCharacter().equals(Position.DETECTIVE))
                     {
-                            while(this.server.GetPlayer(message).getData().getRole().getCharacter().equals(Position.DETECTIVE) || this.server.GetPlayer(message)==null)
+                        boolean validity =false;
+                        while (!validity)
+                        {
+                            if(this.server.GetPlayer(message)==null)
                             {
-                                out.writeUTF("Not valid player");
-                                message = in.readUTF();
+                                out.writeUTF("Player not in list");
                             }
-                        choosenPlayer=message;
-                        ChoosePlayer();
-                        ChoosePlayerMode = false;
+                            else if (this.server.GetPlayer(message).getData().getRole().getCharacter().equals(Position.DETECTIVE))
+                            {
+                                out.writeUTF("You choosed yourself");
+                            }
+                            else
+                            {
+                                choosenPlayer=message;
+                                ChoosePlayer();
+                                ChoosePlayerMode = false;
+                                validity=true;
+                            }
+                        }
                     }
                     else if(this.getData().getRole().getCharacter().equals(Position.PROFESSIONAL))
                     {
@@ -161,14 +196,24 @@ public class UserThread extends Thread{
                         String response = in.readUTF();
                         if(response.equals("Yes"))
                         {
-                            while (this.server.GetPlayer(message)==null || this.server.GetPlayer(message).getData().getRole().getCharacter().equals(Position.PROFESSIONAL))
+                            boolean validity = false;
+                            while (!validity)
                             {
-                                out.writeUTF("Not valid player");
-                                message = in.readUTF();
+                                if(this.server.GetPlayer(message)==null)
+                                {
+                                    out.writeUTF("Player is not in list");
+                                }
+                                else if(this.server.GetPlayer(message).getData().getRole().getCharacter().equals(Position.PROFESSIONAL))
+                                {
+                                    out.writeUTF("You choosed yourself!");
+                                }
+                                else {
+                                    choosenPlayer=message;
+                                    ChoosePlayer();
+                                    ChoosePlayerMode = false;
+                                    validity=true;
+                                }
                             }
-                            choosenPlayer=message;
-                            ChoosePlayer();
-                            ChoosePlayerMode = false;
                         }
                         else
                         {
@@ -181,14 +226,24 @@ public class UserThread extends Thread{
                         String response = in.readUTF();
                         if(response.equals("Yes"))
                         {
-                            while (this.server.GetPlayer(message)==null || this.server.GetPlayer(message).getData().getRole().getCharacter().equals(Position.PSYCHOLOGIST) )
+                            boolean validity = false;
+                            while (!validity)
                             {
-                                out.writeUTF("Not valid player");
-                                message = in.readUTF();
+                                if(this.server.GetPlayer(message)==null)
+                                {
+                                    out.writeUTF("Player is not in list");
+                                }
+                                else if(this.server.GetPlayer(message).getData().getRole().getCharacter().equals(Position.PSYCHOLOGIST))
+                                {
+                                    out.writeUTF("You choosed yourself!");
+                                }
+                                else {
+                                    choosenPlayer=message;
+                                    ChoosePlayer();
+                                    ChoosePlayerMode = false;
+                                    validity=true;
+                                }
                             }
-                            message=choosenPlayer;
-                            ChoosePlayer();
-                            ChoosePlayerMode = false;
                         }
                         else
                         {
