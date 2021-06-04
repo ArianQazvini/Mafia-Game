@@ -1,5 +1,4 @@
 package com.company.Logic;
-
 import com.company.Civilians.*;
 import com.company.Mafias.GodFather;
 import com.company.Mafias.Lecter;
@@ -7,16 +6,9 @@ import com.company.Mafias.Mafia;
 import com.company.Mafias.SimpleMafia;
 import com.company.PlayerData;
 import com.company.TimeCounter;
-
-import javax.crypto.Cipher;
-import java.awt.*;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketException;
-import java.net.SocketTimeoutException;
-import java.sql.PreparedStatement;
 import java.util.*;
 
 public class Server {
@@ -30,6 +22,8 @@ public class Server {
     private int ready=0;
     private boolean joinigFinished=false;
     private UserThread PsychologistChoice=null;
+    private boolean anouncement=false;
+    private boolean DiehardPermission= false;
     public Server(int port)
     {
 
@@ -108,6 +102,7 @@ public class Server {
                userThreads.add(temp);
                temp.start();
             }
+            serverSocket.close();
             System.out.println("Everybody has joined");
                 while (!EveryBodyRegistered())
                 {
@@ -133,11 +128,17 @@ public class Server {
                 SendAll("Mafia is going to wake up...");
                 Thread.sleep(300);
                 UnMuteMafia();
-                SendAll("You got only 10 seconds for chatting");
-                CheckTime(10);
+                SendAll("You got only 30 seconds for chatting");
+                CheckTime(30);
                 MuteAll();
                 GodFather();
                 DrLecter();
+                CityDoctor();
+                Detective();
+                Professional();
+                Psychologist();
+                DieHard();
+                System.out.println("Check time");
         }
         catch (IOException | InterruptedException exception) {
             System.err.println("Error about IO in serverside");
@@ -338,7 +339,7 @@ public class Server {
     {
         for (int i=0;i<userThreads.size();i++)
         {
-            if(userThreads.get(i).getData().getUsername().equals(name) && userThreads.get(i).getData().getRole().isAlive())
+            if(userThreads.get(i).getData().getUsername().equals(name))
             {
                 return userThreads.get(i);
             }
@@ -426,13 +427,40 @@ public class Server {
             }
         }
     }
+    private void Detective()
+    {
+        for (int i=0;i<userThreads.size();i++)
+        {
+            if(userThreads.get(i).getData().getRole().getCharacter().equals(Position.DETECTIVE))
+            {
+                userThreads.get(i).Receive("Choose the player you want to know about");
+                userThreads.get(i).setChoosePlayerMode(true);
+                Detective temp = (Detective) userThreads.get(i).getData().getRole();
+                while (userThreads.get(i).ChoosePlayer()==null)
+                {
+                    try {
+                        Thread.sleep(500);
+                    } catch (InterruptedException e) {
+                        System.err.println("InterruptedException");
+                    }
+                }
+                UserThread help = GetPlayer(userThreads.get(i).ChoosePlayer());
+                if(help != null )
+                {
+                    userThreads.get(i).Receive(temp.action(help));
+                }
+                userThreads.get(i).Receive("Done");
+                break;
+            }
+        }
+    }
     private void Professional()
     {
         for (int i=0;i<userThreads.size();i++)
         {
             if(userThreads.get(i).getData().getRole().getCharacter().equals(Position.PROFESSIONAL))
             {
-                userThreads.get(i).Receive("Choose the player you want to save");
+                userThreads.get(i).Receive("Choose the player you want to kill");
                 userThreads.get(i).setChoosePlayerMode(true);
                 Professional temp = (Professional) userThreads.get(i).getData().getRole();
                 while (userThreads.get(i).ChoosePlayer()==null)
@@ -487,10 +515,8 @@ public class Server {
         {
             if(userThreads.get(i).getData().getRole().getCharacter().equals(Position.DIEHARD))
             {
-                userThreads.get(i).Receive("Choose the player you want to save");
                 userThreads.get(i).setChoosePlayerMode(true);
-                DieHard temp = (DieHard) userThreads.get(i).getData().getRole();
-                while (userThreads.get(i).ChoosePlayer()==null)
+                while (!DiehardPermission)
                 {
                     try {
                         Thread.sleep(500);
@@ -498,12 +524,9 @@ public class Server {
                         System.err.println("InterruptedException");
                     }
                 }
-                UserThread help = GetPlayer(userThreads.get(i).ChoosePlayer());
-                this.PsychologistChoice = help;
-                if(help != null )
-                {
-                    temp.action(help);
-                }
+                DieHard temp = (DieHard) userThreads.get(i).getData().getRole();
+                temp.AnounceRequest();
+                this.anouncement=true;
                 userThreads.get(i).Receive("Done");
                 break;
             }
@@ -513,7 +536,10 @@ public class Server {
     {
           for (int i=0;i<userThreads.size();i++)
           {
-
+              if(!userThreads.get(i).getData().getRole().isAlive())
+              {
+                  Dead.add(userThreads.get(i));
+              }
           }
     }
     public void Mute(String name,int sleep)
@@ -564,31 +590,68 @@ public class Server {
             }
         }
     }
-    public void RemoveThread(UserThread thread)
+    public void RemoveThread(UserThread thread,String mode)
     {
-        Iterator<UserThread> it = userThreads.iterator();
-        String name = "";
-        while (it.hasNext())
+        if(mode.equals("Normal"))
         {
-            UserThread temp  = it.next();
-            if(temp.equals(thread))
+            Iterator<UserThread> it = userThreads.iterator();
+            String name = "";
+            while (it.hasNext())
             {
-                name = temp.getData().getUsername();
-                System.out.println(name+" disconnected");
-                it.remove();
-                break;
+                UserThread temp  = it.next();
+                if(temp.equals(thread))
+                {
+                    name = temp.getData().getUsername();
+                    System.out.println(name+" disconnected");
+                    it.remove();
+                    break;
+                }
+            }
+            Iterator<PlayerData> it2 = playersData.iterator();
+            while (it2.hasNext())
+            {
+                PlayerData temp = it2.next();
+                if(temp.getUsername().equals(name))
+                {
+                    it2.remove();
+                    break;
+                }
             }
         }
-        Iterator<PlayerData> it2 = playersData.iterator();
-        while (it2.hasNext())
+        else
         {
-            PlayerData temp = it2.next();
-            if(temp.getUsername().equals(name))
+            System.err.println("A player disconnected");
+            Iterator<UserThread> it = userThreads.iterator();
+            String name = "";
+            while (it.hasNext())
             {
-                it2.remove();
-                break;
+                UserThread temp  = it.next();
+                if(temp.equals(thread))
+                {
+                    name = temp.getData().getUsername();
+                    System.out.println(name+" disconnected");
+                    it.remove();
+                    break;
+                }
+            }
+            Iterator<PlayerData> it2 = playersData.iterator();
+            while (it2.hasNext())
+            {
+                PlayerData temp = it2.next();
+                if(temp.getUsername().equals(name))
+                {
+                    it2.remove();
+                    break;
+                }
             }
         }
+
+    }
+    public void setDiehardPermission(boolean diehardPermission) {
+        DiehardPermission = diehardPermission;
+    }
+    public boolean isDiehardPermission() {
+        return DiehardPermission;
     }
     public void setJoinigFinished(boolean joinigFinished) {
         this.joinigFinished = joinigFinished;

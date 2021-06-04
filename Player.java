@@ -16,8 +16,11 @@ public class Player {
     private Thread send;
     public Player(String ip,int port) {
         try {
-
             connection = new Socket(ip,port );
+        }
+        catch (ConnectException e)
+        {
+            System.err.println("Server refused to connect");
         }
         catch (IOException exception) {
             System.err.println("IO Error -Player constructor");
@@ -25,8 +28,11 @@ public class Player {
     }
     public void startPlayer()
     {
-       Read();
-       Send();
+        if(connection!= null)
+        {
+            Read();
+            Send();
+        }
     }
     public void Send()
     {
@@ -37,7 +43,8 @@ public class Player {
                 DataOutputStream out = null;
                 try {
                     out = new DataOutputStream(connection.getOutputStream());
-                } catch (IOException exception) {
+                }
+                catch (IOException exception) {
                     exception.printStackTrace();
                 }
                 while (true)
@@ -51,7 +58,9 @@ public class Player {
                             out.close();
                             break;
                         }
-                    } catch (IOException | InterruptedException exception) {
+
+                    }
+                    catch (IOException | InterruptedException exception) {
                         System.err.println("Error in IO -Sending Client ");
                     }
 
@@ -69,7 +78,8 @@ public class Player {
                 DataInputStream in = null;
                 try {
                     in = new DataInputStream(connection.getInputStream());
-                } catch (IOException exception) {
+                }
+                catch (IOException exception) {
                     exception.printStackTrace();
                 }
                 while (true)
