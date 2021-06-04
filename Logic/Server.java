@@ -460,10 +460,10 @@ public class Server {
         {
             if(userThreads.get(i).getData().getRole().getCharacter().equals(Position.PROFESSIONAL))
             {
-                userThreads.get(i).Receive("Choose the player you want to kill");
+                userThreads.get(i).Receive("Do you want to use your ability ?");
                 userThreads.get(i).setChoosePlayerMode(true);
                 Professional temp = (Professional) userThreads.get(i).getData().getRole();
-                while (userThreads.get(i).ChoosePlayer()==null)
+                while (userThreads.get(i).poll()==null)
                 {
                     try {
                         Thread.sleep(500);
@@ -471,13 +471,29 @@ public class Server {
                         System.err.println("InterruptedException");
                     }
                 }
-                UserThread help = GetPlayer(userThreads.get(i).ChoosePlayer());
-                if(help != null )
+                if(userThreads.get(i).poll().equals("Yes"))
                 {
-                    temp.action(help);
+                    while (userThreads.get(i).ChoosePlayer()==null)
+                    {
+                        try {
+                            Thread.sleep(500);
+                        } catch (InterruptedException e) {
+                            System.err.println("InterruptedException");
+                        }
+                    }
+                    UserThread help = GetPlayer(userThreads.get(i).ChoosePlayer());
+                    if(help != null )
+                    {
+                        temp.action(help);
+                    }
+                    userThreads.get(i).Receive("Done");
+                    break;
                 }
-                userThreads.get(i).Receive("Done");
-                break;
+                else
+                {
+                    break;
+                }
+
             }
         }
     }
@@ -487,10 +503,10 @@ public class Server {
         {
             if(userThreads.get(i).getData().getRole().getCharacter().equals(Position.PSYCHOLOGIST))
             {
-                userThreads.get(i).Receive("Choose the player you want to save");
+                userThreads.get(i).Receive("Do you want to use your ability ?");
                 userThreads.get(i).setChoosePlayerMode(true);
                 Psychologist temp = (Psychologist) userThreads.get(i).getData().getRole();
-                while (userThreads.get(i).ChoosePlayer()==null)
+                while (userThreads.get(i).poll()==null)
                 {
                     try {
                         Thread.sleep(500);
@@ -498,14 +514,21 @@ public class Server {
                         System.err.println("InterruptedException");
                     }
                 }
-                UserThread help = GetPlayer(userThreads.get(i).ChoosePlayer());
-                this.PsychologistChoice = help;
-                if(help != null )
+                if(userThreads.get(i).poll().equals("Yes"))
                 {
-                    temp.action(help);
+                    UserThread help = GetPlayer(userThreads.get(i).ChoosePlayer());
+                    this.PsychologistChoice = help;
+                    if(help != null )
+                    {
+                        temp.action(help);
+                    }
+                    userThreads.get(i).Receive("Done");
+                    break;
                 }
-                userThreads.get(i).Receive("Done");
-                break;
+                else
+                {
+                    break;
+                }
             }
         }
     }
@@ -516,7 +539,7 @@ public class Server {
             if(userThreads.get(i).getData().getRole().getCharacter().equals(Position.DIEHARD))
             {
                 userThreads.get(i).setChoosePlayerMode(true);
-                while (!DiehardPermission)
+                while (userThreads.get(i).poll()==null)
                 {
                     try {
                         Thread.sleep(500);
@@ -524,11 +547,26 @@ public class Server {
                         System.err.println("InterruptedException");
                     }
                 }
-                DieHard temp = (DieHard) userThreads.get(i).getData().getRole();
-                temp.AnounceRequest();
-                this.anouncement=true;
-                userThreads.get(i).Receive("Done");
-                break;
+                if(userThreads.get(i).poll().equals("Yes"))
+                {
+                    while (!DiehardPermission)
+                    {
+                        try {
+                            Thread.sleep(500);
+                        } catch (InterruptedException e) {
+                            System.err.println("InterruptedException");
+                        }
+                    }
+                    DieHard temp = (DieHard) userThreads.get(i).getData().getRole();
+                    temp.AnounceRequest();
+                    this.anouncement=true;
+                    userThreads.get(i).Receive("Done");
+                    break;
+                }
+                else
+                {
+                    break;
+                }
             }
         }
     }

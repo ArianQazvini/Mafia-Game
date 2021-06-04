@@ -24,6 +24,7 @@ public class UserThread extends Thread{
     private boolean canStartGame= false;
     private boolean ChoosePlayerMode = false;
     private String choosenPlayer = null;
+    private String poll= null;
     public UserThread(Socket socket,Server server)
     {
         this.socket = socket;
@@ -94,7 +95,12 @@ public class UserThread extends Thread{
                                 ChoosePlayerMode = false;
                                 validity=true;
                             }
-                            message=in.readUTF();
+                            if(validity)
+                            {
+                            }
+                            else {
+                                message=in.readUTF();
+                            }
                         }
                     }
                     else if (this.getData().getRole().getCharacter().equals(Position.LECTER))
@@ -135,7 +141,12 @@ public class UserThread extends Thread{
                                 ChoosePlayerMode = false;
                                 validity=true;
                             }
-                            message=in.readUTF();
+                            if(validity)
+                            {
+                            }
+                            else {
+                                message=in.readUTF();
+                            }
                         }
                     }
                     else if (this.getData().getRole().getCharacter().equals(Position.CITYDOCTOR))
@@ -187,15 +198,21 @@ public class UserThread extends Thread{
                                 ChoosePlayerMode = false;
                                 validity=true;
                             }
+                            if(validity)
+                            {
+                            }
+                            else {
+                                message=in.readUTF();
+                            }
                         }
                     }
                     else if(this.getData().getRole().getCharacter().equals(Position.PROFESSIONAL))
                     {
-
-                        out.writeUTF("Do you want to use your ability?Yes-No");
-                        String response = in.readUTF();
-                        if(response.equals("Yes"))
+                        if(message.equals("Yes"))
                         {
+                            this.poll="Yes";
+                            out.writeUTF("Choose the player you want to kill");
+                            message= in.readUTF();
                             boolean validity = false;
                             while (!validity)
                             {
@@ -213,19 +230,26 @@ public class UserThread extends Thread{
                                     ChoosePlayerMode = false;
                                     validity=true;
                                 }
+                                if(validity)
+                                {
+                                }
+                                else {
+                                    message=in.readUTF();
+                                }
                             }
                         }
                         else
                         {
+                            this.poll="No";
                             ChoosePlayerMode=false;
                         }
                     }
                     else if(this.getData().getRole().getCharacter().equals(Position.PSYCHOLOGIST))
                     {
-                        out.writeUTF("Do you want to use your ability?Yes-No");
-                        String response = in.readUTF();
-                        if(response.equals("Yes"))
+                        if(message.equals("Yes"))
                         {
+                            this.poll = "Yes";
+                            out.writeUTF("Choose the player you want to mute");
                             boolean validity = false;
                             while (!validity)
                             {
@@ -243,20 +267,26 @@ public class UserThread extends Thread{
                                     ChoosePlayerMode = false;
                                     validity=true;
                                 }
+                                if(validity)
+                                {
+                                }
+                                else {
+                                    message=in.readUTF();
+                                }
                             }
                         }
                         else
                         {
+                            this.poll="No";
                             ChoosePlayerMode=false;
                         }
 
                     }
                     else if(this.getData().getRole().getCharacter().equals(Position.DIEHARD))
                     {
-                        out.writeUTF("Do you want to use your ability?Yes-No");
-                        String response = in.readUTF();
-                        if(response.equals("Yes"))
+                        if(message.equals("Yes"))
                         {
+                            this.poll = "Yes";
                             DieHard temp = (DieHard) this.data.getRole();
                             if (temp.getAnounceCount() <2)
                             {
@@ -270,6 +300,7 @@ public class UserThread extends Thread{
                         }
                         else
                         {
+                            this.poll="No";
                             ChoosePlayerMode=false;
                         }
                     }
@@ -351,6 +382,10 @@ public class UserThread extends Thread{
     public String ChoosePlayer()
     {
             return choosenPlayer;
+    }
+    public String poll()
+    {
+        return poll;
     }
     public void setSleep(int sleep) {
         this.sleep = sleep;
