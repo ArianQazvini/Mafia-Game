@@ -460,7 +460,7 @@ public class Server {
         {
             if(userThreads.get(i).getData().getRole().getCharacter().equals(Position.PROFESSIONAL))
             {
-                userThreads.get(i).Receive("Do you want to use your ability ?");
+                userThreads.get(i).Receive("Do you want to use your ability ?Yes-No");
                 userThreads.get(i).setChoosePlayerMode(true);
                 Professional temp = (Professional) userThreads.get(i).getData().getRole();
                 while (userThreads.get(i).poll()==null)
@@ -503,7 +503,7 @@ public class Server {
         {
             if(userThreads.get(i).getData().getRole().getCharacter().equals(Position.PSYCHOLOGIST))
             {
-                userThreads.get(i).Receive("Do you want to use your ability ?");
+                userThreads.get(i).Receive("Do you want to use your ability ?Yes-No");
                 userThreads.get(i).setChoosePlayerMode(true);
                 Psychologist temp = (Psychologist) userThreads.get(i).getData().getRole();
                 while (userThreads.get(i).poll()==null)
@@ -516,6 +516,14 @@ public class Server {
                 }
                 if(userThreads.get(i).poll().equals("Yes"))
                 {
+                    while (userThreads.get(i).ChoosePlayer()==null)
+                    {
+                        try {
+                            Thread.sleep(500);
+                        } catch (InterruptedException e) {
+                            System.err.println("InterruptedException");
+                        }
+                    }
                     UserThread help = GetPlayer(userThreads.get(i).ChoosePlayer());
                     this.PsychologistChoice = help;
                     if(help != null )
@@ -536,20 +544,13 @@ public class Server {
     {
         for (int i=0;i<userThreads.size();i++)
         {
-            if(userThreads.get(i).getData().getRole().getCharacter().equals(Position.DIEHARD))
-            {
-                userThreads.get(i).setChoosePlayerMode(true);
-                while (userThreads.get(i).poll()==null)
+            if(userThreads.get(i).getData().getRole().getCharacter().equals(Position.DIEHARD)) {
+                DieHard temp1 = (DieHard) userThreads.get(i).getData().getRole();
+                if (temp1.getAnounceCount() < 2)
                 {
-                    try {
-                        Thread.sleep(500);
-                    } catch (InterruptedException e) {
-                        System.err.println("InterruptedException");
-                    }
-                }
-                if(userThreads.get(i).poll().equals("Yes"))
-                {
-                    while (!DiehardPermission)
+                    userThreads.get(i).Receive("Do you want to use your ability?");
+                    userThreads.get(i).setChoosePlayerMode(true);
+                    while (userThreads.get(i).poll()==null)
                     {
                         try {
                             Thread.sleep(500);
@@ -557,14 +558,30 @@ public class Server {
                             System.err.println("InterruptedException");
                         }
                     }
-                    DieHard temp = (DieHard) userThreads.get(i).getData().getRole();
-                    temp.AnounceRequest();
-                    this.anouncement=true;
-                    userThreads.get(i).Receive("Done");
-                    break;
+                    if(userThreads.get(i).poll().equals("Yes"))
+                    {
+                        while (!DiehardPermission)
+                        {
+                            try {
+                                Thread.sleep(500);
+                            } catch (InterruptedException e) {
+                                System.err.println("InterruptedException");
+                            }
+                        }
+                        DieHard temp = (DieHard) userThreads.get(i).getData().getRole();
+                        temp.AnounceRequest();
+                        this.anouncement=true;
+                        userThreads.get(i).Receive("Done");
+                        break;
+                    }
+                    else
+                    {
+                        break;
+                    }
                 }
                 else
                 {
+                    userThreads.get(i).Receive("You can't use your ability");
                     break;
                 }
             }

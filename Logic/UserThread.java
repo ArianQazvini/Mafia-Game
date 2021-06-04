@@ -250,6 +250,7 @@ public class UserThread extends Thread{
                         {
                             this.poll = "Yes";
                             out.writeUTF("Choose the player you want to mute");
+                            message= in.readUTF();
                             boolean validity = false;
                             while (!validity)
                             {
@@ -287,15 +288,7 @@ public class UserThread extends Thread{
                         if(message.equals("Yes"))
                         {
                             this.poll = "Yes";
-                            DieHard temp = (DieHard) this.data.getRole();
-                            if (temp.getAnounceCount() <2)
-                            {
-                                this.server.setDiehardPermission(true);
-                            }
-                            else
-                            {
-                                out.writeUTF("You can't use your ability more 2 times!");
-                            }
+                            this.server.setDiehardPermission(true);
                             ChoosePlayerMode = false;
                         }
                         else
