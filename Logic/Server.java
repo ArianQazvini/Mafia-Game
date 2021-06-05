@@ -6,7 +6,8 @@ import com.company.Mafias.Mafia;
 import com.company.Mafias.SimpleMafia;
 import com.company.PlayerData;
 import com.company.TimeCounter;
-import java.io.IOException;
+
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.*;
@@ -24,11 +25,14 @@ public class Server {
     private UserThread PsychologistChoice=null;
     private boolean anouncement=false;
     private boolean DiehardPermission= false;
+    private boolean PublicChatMode = false;
+    private File file;
     public Server(int port)
     {
 
         this.name = "Server1";
         this.port= port;
+        this.file = new File("Messages.bin");
         try {
             serverSocket = new ServerSocket(this.port);
         } catch (IOException exception) {
@@ -139,7 +143,15 @@ public class Server {
                 Professional();
                 Psychologist();
                 DieHard();
-                System.out.println("Check time");
+                NightState();
+                announcement();
+                UpdateDead();
+                //-----------------------------Day begins
+                UnMuteAll();
+                SendAll("***Day Time***");
+                SendAll("You got only 60 seconds for chatting");
+                CheckTime(60);
+
         }
         catch (IOException | InterruptedException exception) {
             System.err.println("Error about IO in serverside");
@@ -246,29 +258,83 @@ public class Server {
     }
     public void SendAll(String string,UserThread ut)
     {
-        if(!ut.getData().getRole().isCanChat())
+        if(!PublicChatMode)
         {
-            ut.Receive("You can't send messages cause you are muted or sleeping");
+            if(!ut.getData().getRole().isCanChat())
+            {
+                ut.Receive("You can't send messages cause you are muted or sleeping");
+            }
+            else
+            {
+                ut.Receive("You : "+string+"✓✓");
+                for (int i=0;i<userThreads.size();i++)
+                {
+                    if(userThreads.get(i).equals(ut))
+                    {
+                    }
+                    else
+                    {
+                        if (userThreads.get(i).getData().getRole().isCanChat())
+                        {
+                            userThreads.get(i).Receive(ut.getData().getUsername()+" : "+string);
+                        }
+                    }
+
+                }
+            }
         }
         else
         {
-            ut.Receive("You : "+string+"✓✓");
-            for (int i=0;i<userThreads.size();i++)
+            if(!ut.getData().getRole().isCanChat())
             {
-                if(userThreads.get(i).equals(ut))
+                ut.Receive("You can't send messages cause you are muted or sleeping");
+            }
+            else
+            {
+                ut.Receive("You : "+string+"✓✓");
+                for (int i=0;i<userThreads.size();i++)
                 {
-                }
-                else
-                {
-                    if (userThreads.get(i).getData().getRole().isCanChat())
+                    if(userThreads.get(i).equals(ut))
                     {
-                        userThreads.get(i).Receive(ut.getData().getUsername()+" : "+string);
                     }
-                }
+                    else
+                    {
+                        if (userThreads.get(i).getData().getRole().isCanChat())
+                        {
+                            userThreads.get(i).Receive(ut.getData().getUsername()+" : "+string);
+                        }
+                    }
 
+                }
             }
         }
-
+    }
+    private synchronized void Save(String message,String sender)
+    {
+        try(ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(this.file,true))) {
+            Message text = new Message(message,sender);
+            out.writeObject(text);
+        } catch (IOException exception) {
+            System.err.println("File not found");
+        }
+    }
+    private String LoadAll()
+    {
+        ArrayList<Message> messages = new ArrayList<>();
+        try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(this.file))){
+            while (in.available()>0)
+            {
+                messages.add((Message) in.readObject());
+            }
+        }catch (IOException | ClassNotFoundException exception) {
+            System.err.println("File not found");
+        }
+        StringBuilder stringBuilder = new StringBuilder();
+        for (int i=0;i<messages.size();i++)
+        {
+            stringBuilder.append(messages.get(i).getSender()+" : "+messages.get(i).getMessage());
+        }
+        return stringBuilder.toString();
     }
     private void MafiaIntroduce()
     {
@@ -328,13 +394,14 @@ public class Server {
     }
     private void SendAll(String msg)
     {
-        for (int i=0;i<userThreads.size();i++)
-        {
-            if(userThreads.get(i).getData().getRole().isCanChat())
+            for (int i=0;i<userThreads.size();i++)
             {
-                userThreads.get(i).Receive(msg);
+                if(userThreads.get(i).getData().getRole().isCanChat())
+                {
+                    userThreads.get(i).Receive(msg);
+                }
             }
-        }
+
     }
     private void SendMafia(String msg,UserThread sender)
     {
@@ -638,6 +705,42 @@ public class Server {
                   Dead.add(userThreads.get(i));
               }
           }
+          Iterator<UserThread> it = userThreads.iterator();
+          while (it.hasNext())
+          {
+              UserThread temp = it.next();
+              if(!temp.getData().getRole().isAlive())
+              {
+                  it.remove();
+              }
+          }
+    }
+    private void NightState()
+    {
+        StringBuilder dead = new StringBuilder();
+        for (int i=0;i<userThreads.size();i++)
+        {
+            if(!userThreads.get(i).getData().getRole().isAlive())
+            {
+                dead.append(userThreads.get(i).getData().getUsername()).append(" ");
+            }
+        }
+        SendAll(dead.toString() + " will left us");
+    }
+    private void announcement()
+    {
+        if(anouncement){
+            StringBuilder roles = new StringBuilder();
+            for (int i=0;i<Dead.size();i++)
+            {
+                    roles.append(Dead.get(i).getData().getRole().getCharacter().toString()).append(" ");
+            }
+            SendAll("diehard got announcement");
+            SendAll(roles.toString());
+        }
+        else
+        {
+        }
     }
     public void Mute(String name,int sleep)
     {
