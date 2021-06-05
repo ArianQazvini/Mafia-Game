@@ -603,8 +603,8 @@ public class Server {
         Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
-                userThreads.get(index).Receive("What's your vote?");
                 userThreads.get(index).setMafiaVotingMode(true);
+                userThreads.get(index).Receive("What's your vote?");
                 while (userThreads.get(index).MafiaVote()==null)
                 {
                     try {
@@ -614,7 +614,7 @@ public class Server {
                     }
                 }
                 userThreads.get(index).Receive("Done");
-                SendMafia(userThreads.get(index).getData().getUsername()+"vote is: "+userThreads.get(index).MafiaVote(),userThreads.get(index));
+                SendMafia(userThreads.get(index).getData().getUsername()+" vote is: "+userThreads.get(index).MafiaVote(),userThreads.get(index));
             }
         });
         thread.start();

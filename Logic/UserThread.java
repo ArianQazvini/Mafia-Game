@@ -75,8 +75,9 @@ public class UserThread extends Thread{
 //            }
             while (true)
             {
-                Thread.sleep(100);
+
                 String message = in.readUTF();
+                Thread.sleep(200);
                 if(MafiaVotingMode)
                 {
                     boolean validity = false;
@@ -105,7 +106,7 @@ public class UserThread extends Thread{
                     }
 
                 }
-                if(ChoosePlayerMode)
+                else if(ChoosePlayerMode)
                 {
                     if(this.getData().getRole().getCharacter().equals(Position.GODFATHER))
                     {
