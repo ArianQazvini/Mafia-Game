@@ -241,7 +241,7 @@ public class UserThread extends Thread{
                     }
                     else if(this.getData().getRole().getCharacter().equals(Position.PROFESSIONAL))
                     {
-                        if(message.equals("Yes"))
+                        if(message.equals("YES"))
                         {
                             this.poll="Yes";
                             out.writeUTF("Choose the player you want to kill");
@@ -273,15 +273,15 @@ public class UserThread extends Thread{
                         }
                         else
                         {
-                            this.poll="No";
+                            this.poll="NO";
                             ChoosePlayerMode=false;
                         }
                     }
                     else if(this.getData().getRole().getCharacter().equals(Position.PSYCHOLOGIST))
                     {
-                        if(message.equals("Yes"))
+                        if(message.equals("YES"))
                         {
-                            this.poll = "Yes";
+                            this.poll = "YES";
                             out.writeUTF("Choose the player you want to mute");
                             message= in.readUTF();
                             boolean validity = false;
@@ -311,22 +311,22 @@ public class UserThread extends Thread{
                         }
                         else
                         {
-                            this.poll="No";
+                            this.poll="NO";
                             ChoosePlayerMode=false;
                         }
 
                     }
                     else if(this.getData().getRole().getCharacter().equals(Position.DIEHARD))
                     {
-                        if(message.equals("Yes"))
+                        if(message.equals("YES"))
                         {
-                            this.poll = "Yes";
+                            this.poll = "YES";
                             this.server.setDiehardPermission(true);
                             ChoosePlayerMode = false;
                         }
                         else
                         {
-                            this.poll="No";
+                            this.poll="NO";
                             ChoosePlayerMode=false;
                         }
                     }

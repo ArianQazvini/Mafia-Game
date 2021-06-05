@@ -147,7 +147,8 @@ public class Server {
                 announcement();
                 UpdateDead();
                 //-----------------------------Day begins
-                UnMuteAll();
+                this.PublicChatMode = true;
+                UnMuteAll(this.PsychologistChoice);
                 SendAll("***Day Time***");
                 SendAll("You got only 60 seconds for chatting");
                 CheckTime(60);
@@ -285,6 +286,7 @@ public class Server {
         }
         else
         {
+            Save(string,ut.getData().getUsername());
             if(!ut.getData().getRole().isCanChat())
             {
                 ut.Receive("You can't send messages cause you are muted or sleeping");
@@ -332,7 +334,7 @@ public class Server {
         StringBuilder stringBuilder = new StringBuilder();
         for (int i=0;i<messages.size();i++)
         {
-            stringBuilder.append(messages.get(i).getSender()+" : "+messages.get(i).getMessage());
+            stringBuilder.append(messages.get(i).getSender()).append(" : ").append(messages.get(i).getMessage());
         }
         return stringBuilder.toString();
     }
@@ -402,6 +404,13 @@ public class Server {
                 }
             }
 
+    }
+    private void ForceSendAll(String msg)
+    {
+        for (int i=0;i<userThreads.size();i++)
+        {
+                userThreads.get(i).Receive(msg);
+        }
     }
     private void SendMafia(String msg,UserThread sender)
     {
@@ -538,7 +547,7 @@ public class Server {
         {
             if(userThreads.get(i).getData().getRole().getCharacter().equals(Position.PROFESSIONAL))
             {
-                userThreads.get(i).Receive("Do you want to use your ability ?Yes-No");
+                userThreads.get(i).Receive("Do you want to use your ability ? YES-NO");
                 userThreads.get(i).setChoosePlayerMode(true);
                 Professional temp = (Professional) userThreads.get(i).getData().getRole();
                 while (userThreads.get(i).poll()==null)
@@ -581,7 +590,7 @@ public class Server {
         {
             if(userThreads.get(i).getData().getRole().getCharacter().equals(Position.PSYCHOLOGIST))
             {
-                userThreads.get(i).Receive("Do you want to use your ability ?Yes-No");
+                userThreads.get(i).Receive("Do you want to use your ability ? YES-NO");
                 userThreads.get(i).setChoosePlayerMode(true);
                 Psychologist temp = (Psychologist) userThreads.get(i).getData().getRole();
                 while (userThreads.get(i).poll()==null)
@@ -626,7 +635,7 @@ public class Server {
                 DieHard temp1 = (DieHard) userThreads.get(i).getData().getRole();
                 if (temp1.getAnounceCount() < 2)
                 {
-                    userThreads.get(i).Receive("Do you want to use your ability?");
+                    userThreads.get(i).Receive("Do you want to use your ability? YES-NO");
                     userThreads.get(i).setChoosePlayerMode(true);
                     while (userThreads.get(i).poll()==null)
                     {
@@ -718,14 +727,23 @@ public class Server {
     private void NightState()
     {
         StringBuilder dead = new StringBuilder();
+        int count =0;
         for (int i=0;i<userThreads.size();i++)
         {
             if(!userThreads.get(i).getData().getRole().isAlive())
             {
+                count++;
                 dead.append(userThreads.get(i).getData().getUsername()).append(" ");
             }
         }
-        SendAll(dead.toString() + " will left us");
+        if(count==0)
+        {
+            ForceSendAll("Nobody will left us");
+        }
+        else
+        {
+            ForceSendAll(dead.toString() + " will left us");
+        }
     }
     private void announcement()
     {
@@ -735,8 +753,8 @@ public class Server {
             {
                     roles.append(Dead.get(i).getData().getRole().getCharacter().toString()).append(" ");
             }
-            SendAll("diehard got announcement");
-            SendAll(roles.toString());
+            ForceSendAll("diehard got announcement");
+            ForceSendAll(roles.toString());
         }
         else
         {
@@ -773,12 +791,29 @@ public class Server {
             userThreads.get(i).getData().getRole().setCanChat(false);
         }
     }
-    private void UnMuteAll()
+    private void UnMuteAll(UserThread except)
     {
-        for (int i=0;i<userThreads.size();i++)
+        if(except==null)
         {
-            userThreads.get(i).getData().getRole().setCanChat(true);
+            for (int i=0;i<userThreads.size();i++)
+            {
+                userThreads.get(i).getData().getRole().setCanChat(true);
+            }
         }
+        else
+        {
+            for (int i=0;i<userThreads.size();i++)
+            {
+                if(userThreads.get(i).equals(except))
+                {
+                }
+                else
+                {
+                    userThreads.get(i).getData().getRole().setCanChat(true);
+                }
+            }
+        }
+
     }
     private void UnMuteMafia()
     {
