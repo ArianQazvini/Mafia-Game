@@ -131,6 +131,7 @@ public class Server {
                 SendAll("You got only 30 seconds for chatting");
                 CheckTime(30);
                 MuteAll();
+                MafiaVoting();
                 GodFather();
                 DrLecter();
                 CityDoctor();
@@ -330,6 +331,16 @@ public class Server {
         for (int i=0;i<userThreads.size();i++)
         {
             if(userThreads.get(i).getData().getRole().isCanChat())
+            {
+                userThreads.get(i).Receive(msg);
+            }
+        }
+    }
+    private void SendMafia(String msg,UserThread sender)
+    {
+        for (int i=0;i<userThreads.size();i++)
+        {
+            if(userThreads.get(i).getData().getRole() instanceof  Mafia && !userThreads.get(i).equals(sender))
             {
                 userThreads.get(i).Receive(msg);
             }
@@ -584,6 +595,37 @@ public class Server {
                     userThreads.get(i).Receive("You can't use your ability");
                     break;
                 }
+            }
+        }
+    }
+    private void MafiaVotingThread(int index)
+    {
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                userThreads.get(index).Receive("What's your vote?");
+                userThreads.get(index).setMafiaVotingMode(true);
+                while (userThreads.get(index).MafiaVote()==null)
+                {
+                    try {
+                        Thread.sleep(500);
+                    } catch (InterruptedException e) {
+                        System.err.println("InterruptedException");
+                    }
+                }
+                userThreads.get(index).Receive("Done");
+                SendMafia(userThreads.get(index).getData().getUsername()+"vote is: "+userThreads.get(index).MafiaVote(),userThreads.get(index));
+            }
+        });
+        thread.start();
+    }
+    private void MafiaVoting()
+    {
+        for (int i=0;i<userThreads.size();i++)
+        {
+            if(userThreads.get(i).getData().getRole().getCharacter().equals(Position.LECTER) || userThreads.get(i).getData().getRole().getCharacter().equals(Position.SIMPLE_MAFIA))
+            {
+                   MafiaVotingThread(i);
             }
         }
     }

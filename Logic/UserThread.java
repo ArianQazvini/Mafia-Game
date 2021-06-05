@@ -23,7 +23,11 @@ public class UserThread extends Thread{
     private boolean isRegistered = false;
     private boolean canStartGame= false;
     private boolean ChoosePlayerMode = false;
+    private boolean VotingMode = false;
+    private boolean MafiaVotingMode = false;
     private String choosenPlayer = null;
+    private String MafiaVote = null;
+    private String Vote = null;
     private String poll= null;
     public UserThread(Socket socket,Server server)
     {
@@ -73,6 +77,34 @@ public class UserThread extends Thread{
             {
                 Thread.sleep(100);
                 String message = in.readUTF();
+                if(MafiaVotingMode)
+                {
+                    boolean validity = false;
+                    while (!validity)
+                    {
+                        if (this.server.GetPlayer(message)==null)
+                        {
+                            out.writeUTF("Player is not in list");
+                        }
+                        else if (this.server.GetPlayer(message).getData().getRole() instanceof Mafia)
+                        {
+                            out.writeUTF("Choose from civilians");
+                        }
+                        else
+                        {
+                            MafiaVote = message;
+                            MafiaVotingMode = false;
+                            validity = true;
+                        }
+                        if(validity)
+                        {
+                        }
+                        else {
+                            message=in.readUTF();
+                        }
+                    }
+
+                }
                 if(ChoosePlayerMode)
                 {
                     if(this.getData().getRole().getCharacter().equals(Position.GODFATHER))
@@ -376,6 +408,10 @@ public class UserThread extends Thread{
     {
             return choosenPlayer;
     }
+    public String MafiaVote()
+    {
+        return this.MafiaVote;
+    }
     public String poll()
     {
         return poll;
@@ -405,6 +441,22 @@ public class UserThread extends Thread{
     public boolean isChoosePlayerMode() {
         return ChoosePlayerMode;
     }
+
+    public void setVotingMode(boolean votingMode) {
+        VotingMode = votingMode;
+    }
+    public boolean isVotingMode() {
+        return VotingMode;
+    }
+
+    public void setMafiaVotingMode(boolean mafiaVotingMode) {
+        MafiaVotingMode = mafiaVotingMode;
+    }
+
+    public boolean isMafiaVotingMode() {
+        return MafiaVotingMode;
+    }
+
     @Override
     public boolean equals(Object o)
     {
