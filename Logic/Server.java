@@ -10,6 +10,7 @@ import com.company.TimeCounter;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public class Server {
@@ -130,13 +131,21 @@ public class Server {
                 MafiaIntroduce();
                 Thread.sleep(300);
                 MayortoDrIntroduce();
-                SendAll("Mafia is going to wake up...");
+                ForceSendAll("Mafia is going to wake up...");
                 Thread.sleep(300);
-                SendAll("***Day Time***");
+                ForceSendAll("***Day Time***");
                 this.PublicChatMode = true;
-                SendAll("You got only 60 seconds for chatting");
+                ForceSendAll("You got only 60 seconds for chatting");
                 UnMuteAll(null);
                 CheckTime(60);
+                MuteAll();
+                ForceSendAll("***Voting Time***");
+                CreatePoll();
+                Voting();
+                CheckTime(31);
+                ShowResults();
+                Mayor();
+                ForceSendAll("***Night***");
                 UnMuteMafia();
                 SendAll("You got only 30 seconds for chatting");
                 CheckTime(30);
@@ -414,6 +423,16 @@ public class Server {
         for (int i=0;i<userThreads.size();i++)
         {
                 userThreads.get(i).Receive(msg);
+        }
+    }
+    private void ForceSendAll(String msg , UserThread except)
+    {
+        for (int i=0;i<userThreads.size();i++)
+        {
+            if(!userThreads.get(i).equals(except))
+            {
+                userThreads.get(i).Receive(msg);
+            }
         }
     }
     private void SendMafia(String msg,UserThread sender)
@@ -730,17 +749,31 @@ public class Server {
     }
     private void CreatePoll()
     {
-        for (int i=0;i<userThreads.size();i++)
+        if(poll==null)
         {
-            ArrayList<UserThread> temp = new ArrayList<>();
-            poll.put(userThreads.get(i).getData().getUsername(),temp);
+            for (int i=0;i<userThreads.size();i++)
+            {
+                ArrayList<UserThread> temp = new ArrayList<>();
+                poll.put(userThreads.get(i).getData().getUsername(),temp);
+            }
         }
+        else
+        {
+            poll.clear();
+            poll= new HashMap<>();
+            for (int i=0;i<userThreads.size();i++)
+            {
+                ArrayList<UserThread> temp = new ArrayList<>();
+                poll.put(userThreads.get(i).getData().getUsername(),temp);
+            }
+        }
+
     }
     private synchronized void VoteRegister(String vote, UserThread ut)
     {
         poll.get(vote).add(ut);
     }
-    private void ShowResults()
+    private HashMap<String ,Integer> Results()
     {
           HashMap<String,Integer> res = new HashMap<>();
           int max = poll.get(userThreads.get(0).getData().getUsername()).size();
@@ -758,13 +791,34 @@ public class Server {
                  res.put(userThreads.get(i).getData().getUsername(),poll.get(userThreads.get(i).getData().getUsername()).size());
              }
           }
-          Set<String> keyset = res.keySet();
-          ArrayList<String> keytemp = new ArrayList<String>(keyset);
-          ForceSendAll("Results:");
-          for (int i=0;i<res.size();i++)
-          {
-              ForceSendAll(keytemp.get(i)+" "+ res.get(keytemp.get(i)));
-          }
+          return res;
+    }
+    private void ShowResults()
+    {
+        Set<String> keyset = Results().keySet();
+        ArrayList<String> keytemp = new ArrayList<String>(keyset);
+        ForceSendAll("Results:");
+        for (int i=0;i<Results().size();i++)
+        {
+            ForceSendAll(keytemp.get(i)+" "+ Results().get(keytemp.get(i)));
+        }
+    }
+    private void VotingKill()
+    {
+        Set<String> keyset = Results().keySet();
+        ArrayList<String> keytemp = new ArrayList<String>(keyset);
+        if(Results().size()==1)
+        {
+            GetPlayer(keytemp.get(0)).getData().getRole().setAlive(false);
+            ForceSendAll(GetPlayer(keytemp.get(0)).getData().getUsername()+ " will leave us");
+        }
+        else
+        {
+            Random random = new Random();
+            int choice = random.nextInt(Results().size());
+            GetPlayer(keytemp.get(choice)).getData().getRole().setAlive(false);
+            ForceSendAll(GetPlayer(keytemp.get(choice)).getData().getUsername()+ " will leave us");
+        }
     }
     private void VotingThread(int index)
     {
@@ -773,17 +827,25 @@ public class Server {
             public void run() {
                userThreads.get(index).setVotingMode(true);
                userThreads.get(index).Receive("What's your vote?");
-               while (userThreads.get(index).poll()==null)
+               if(userThreads.get(index).poll()==null)
                {
                    try {
-                       Thread.sleep(500);
+                       Thread.sleep(30 * 1000);
                    } catch (InterruptedException e) {
                        System.err.println("InterruptedException");
                    }
                }
-               VoteRegister(userThreads.get(index).poll(),userThreads.get(index));
-               userThreads.get(index).Receive("Done");
-               ForceSendAll(userThreads.get(index).getData().getUsername()+" vote is : "+userThreads.get(index).poll());
+               if(userThreads.get(index).poll()==null)
+               {
+                   userThreads.get(index).setVotingMode(false);
+                   userThreads.get(index).Receive("Times Up!");
+                   ForceSendAll(userThreads.get(index).getData().getUsername()+" didn't vote",userThreads.get(index));
+               }
+               else
+               {
+                   VoteRegister(userThreads.get(index).poll(),userThreads.get(index));
+                   ForceSendAll(userThreads.get(index).getData().getUsername()+" vote is : "+userThreads.get(index).poll());
+               }
             }
         });
         thread.start();
@@ -794,6 +856,35 @@ public class Server {
        {
            VotingThread(i);
        }
+    }
+    private void Mayor()
+    {
+        for (int i=0;i<userThreads.size();i++)
+        {
+            if(userThreads.get(i).getData().getRole().getCharacter().equals(Position.MAYOR))
+            {
+                userThreads.get(i).Receive("Do you want to cancel voting ? YES-NO");
+                userThreads.get(i).setMayorMode(true);
+                while (userThreads.get(i).MayorDecision()==null)
+                {
+                    try {
+                        Thread.sleep(500);
+                    } catch (InterruptedException e) {
+                        System.err.println("InterruptedException");
+                    }
+                }
+                if(userThreads.get(i).MayorDecision().equals("YES"))
+                {
+
+                }
+                else
+                {
+                    VotingKill();
+                    UpdateDead();
+                }
+                break;
+            }
+        }
     }
     private void NightState()
     {

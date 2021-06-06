@@ -30,6 +30,7 @@ public class UserThread extends Thread{
     private String MafiaVote = null;
     private String Vote = null;
     private String poll= null;
+    private String MayorDecision=null;
     public UserThread(Socket socket,Server server)
     {
         this.socket = socket;
@@ -88,8 +89,13 @@ public class UserThread extends Thread{
                         {
                             out.writeUTF("Player is not in list");
                         }
+                        else if (this.server.GetPlayer(message).getData().getUsername().equals(this.getData().getUsername()))
+                        {
+                            out.writeUTF("Can't vote to your self");
+                        }
                         else
                         {
+                            out.writeUTF("Done");
                             poll = message;
                             VotingMode = false;
                             validity = true;
@@ -367,11 +373,14 @@ public class UserThread extends Thread{
                 {
                     if(message.equals("YES"))
                     {
-
+                       this.MayorDecision = message;
+                       out.writeUTF("Done");
                     }
                     else
                     {
-                        
+                        this.MayorDecision="NO";
+                        out.writeUTF("Done");
+                        MayorMode = false;
                     }
                 }
                 else
@@ -452,6 +461,10 @@ public class UserThread extends Thread{
     public String poll()
     {
         return poll;
+    }
+    public String MayorDecision()
+    {
+        return this.MayorDecision;
     }
     public void setSleep(int sleep) {
         this.sleep = sleep;
