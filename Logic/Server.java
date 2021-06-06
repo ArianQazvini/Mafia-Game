@@ -17,6 +17,7 @@ public class Server {
     private ArrayList<UserThread> userThreads = new ArrayList<>();
     private ArrayList<UserThread> Dead = new ArrayList<>();
     private ArrayList<Role> roles = new ArrayList<>();
+    private HashMap<String , ArrayList<UserThread>> poll = new HashMap<>();
     private ServerSocket serverSocket = null;
     private String name;
     private int port;
@@ -131,6 +132,11 @@ public class Server {
                 MayortoDrIntroduce();
                 SendAll("Mafia is going to wake up...");
                 Thread.sleep(300);
+                SendAll("***Day Time***");
+                this.PublicChatMode = true;
+                SendAll("You got only 60 seconds for chatting");
+                UnMuteAll(null);
+                CheckTime(60);
                 UnMuteMafia();
                 SendAll("You got only 30 seconds for chatting");
                 CheckTime(30);
@@ -144,14 +150,12 @@ public class Server {
                 Psychologist();
                 DieHard();
                 NightState();
-                announcement();
                 UpdateDead();
-                //-----------------------------Day begins
-                this.PublicChatMode = true;
+                announcement();
                 UnMuteAll(this.PsychologistChoice);
-                SendAll("***Day Time***");
-                SendAll("You got only 60 seconds for chatting");
-                CheckTime(60);
+                //Voting();
+                //Mayor();
+
 
         }
         catch (IOException | InterruptedException exception) {
@@ -723,6 +727,73 @@ public class Server {
                   it.remove();
               }
           }
+    }
+    private void CreatePoll()
+    {
+        for (int i=0;i<userThreads.size();i++)
+        {
+            ArrayList<UserThread> temp = new ArrayList<>();
+            poll.put(userThreads.get(i).getData().getUsername(),temp);
+        }
+    }
+    private synchronized void VoteRegister(String vote, UserThread ut)
+    {
+        poll.get(vote).add(ut);
+    }
+    private void ShowResults()
+    {
+          HashMap<String,Integer> res = new HashMap<>();
+          int max = poll.get(userThreads.get(0).getData().getUsername()).size();
+          for (int i=1;i<userThreads.size();i++)
+          {
+              if(poll.get(userThreads.get(i).getData().getUsername()).size()> max)
+              {
+                  max = poll.get(userThreads.get(i).getData().getUsername()).size();
+              }
+          }
+          for (int i=0;i<userThreads.size();i++)
+          {
+             if(poll.get(userThreads.get(i).getData().getUsername()).size()== max)
+             {
+                 res.put(userThreads.get(i).getData().getUsername(),poll.get(userThreads.get(i).getData().getUsername()).size());
+             }
+          }
+          Set<String> keyset = res.keySet();
+          ArrayList<String> keytemp = new ArrayList<String>(keyset);
+          ForceSendAll("Results:");
+          for (int i=0;i<res.size();i++)
+          {
+              ForceSendAll(keytemp.get(i)+" "+ res.get(keytemp.get(i)));
+          }
+    }
+    private void VotingThread(int index)
+    {
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+               userThreads.get(index).setVotingMode(true);
+               userThreads.get(index).Receive("What's your vote?");
+               while (userThreads.get(index).poll()==null)
+               {
+                   try {
+                       Thread.sleep(500);
+                   } catch (InterruptedException e) {
+                       System.err.println("InterruptedException");
+                   }
+               }
+               VoteRegister(userThreads.get(index).poll(),userThreads.get(index));
+               userThreads.get(index).Receive("Done");
+               ForceSendAll(userThreads.get(index).getData().getUsername()+" vote is : "+userThreads.get(index).poll());
+            }
+        });
+        thread.start();
+    }
+    private void Voting()
+    {
+       for (int i=0;i<userThreads.size();i++)
+       {
+           VotingThread(i);
+       }
     }
     private void NightState()
     {

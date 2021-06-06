@@ -25,7 +25,8 @@ public class UserThread extends Thread{
     private boolean ChoosePlayerMode = false;
     private boolean VotingMode = false;
     private boolean MafiaVotingMode = false;
-    private String choosenPlayer = null;
+    private boolean MayorMode  = false;
+    private String  choosenPlayer = null;
     private String MafiaVote = null;
     private String Vote = null;
     private String poll= null;
@@ -78,7 +79,31 @@ public class UserThread extends Thread{
 
                 String message = in.readUTF();
                 Thread.sleep(200);
-                if(MafiaVotingMode)
+                if(VotingMode)
+                {
+                    boolean validity = false;
+                    while (!validity)
+                    {
+                        if(this.server.GetPlayer(message)==null)
+                        {
+                            out.writeUTF("Player is not in list");
+                        }
+                        else
+                        {
+                            poll = message;
+                            VotingMode = false;
+                            validity = true;
+                        }
+                        if(validity)
+                        {
+                        }
+                        else
+                        {
+                            message = in.readUTF();
+                        }
+                    }
+                }
+                else if(MafiaVotingMode)
                 {
                     boolean validity = false;
                     while (!validity)
@@ -338,6 +363,17 @@ public class UserThread extends Thread{
                         break;
                     }
                 }
+                else if (MayorMode)
+                {
+                    if(message.equals("YES"))
+                    {
+
+                    }
+                    else
+                    {
+                        
+                    }
+                }
                 else
                 {
                     if(message.equals("Exit"))
@@ -449,15 +485,20 @@ public class UserThread extends Thread{
     public boolean isVotingMode() {
         return VotingMode;
     }
-
     public void setMafiaVotingMode(boolean mafiaVotingMode) {
         MafiaVotingMode = mafiaVotingMode;
     }
-
     public boolean isMafiaVotingMode() {
         return MafiaVotingMode;
     }
 
+    public void setMayorMode(boolean mayorMode) {
+        MayorMode = mayorMode;
+    }
+
+    public boolean isMayorMode() {
+        return MayorMode;
+    }
     @Override
     public boolean equals(Object o)
     {
