@@ -17,6 +17,7 @@ public class Server {
     private ArrayList<PlayerData> playersData = new ArrayList<>();
     private ArrayList<UserThread> userThreads = new ArrayList<>();
     private ArrayList<UserThread> Dead = new ArrayList<>();
+    private ArrayList<UserThread> Watchers = new ArrayList<>();
     private ArrayList<Role> roles = new ArrayList<>();
     private HashMap<String , ArrayList<UserThread>> poll = new HashMap<>();
     private ServerSocket serverSocket = null;
@@ -131,37 +132,51 @@ public class Server {
                 MafiaIntroduce();
                 Thread.sleep(300);
                 MayortoDrIntroduce();
-                ForceSendAll("Mafia is going to wake up...");
                 Thread.sleep(300);
-                ForceSendAll("***Day Time***");
-                this.PublicChatMode = true;
-                ForceSendAll("You got only 60 seconds for chatting");
-                UnMuteAll(null);
-                CheckTime(60);
-                MuteAll();
-                ForceSendAll("***Voting Time***");
-                CreatePoll();
-                Voting();
-                CheckTime(31);
-                ShowResults();
-                Mayor();
-                ForceSendAll("***Night***");
-                UnMuteMafia();
-                SendAll("You got only 30 seconds for chatting");
-                CheckTime(30);
-                MuteAll();
-                MafiaVoting();
-                GodFather();
-                DrLecter();
-                CityDoctor();
-                Detective();
-                Professional();
-                Psychologist();
-                DieHard();
-                NightState();
-                UpdateDead();
-                announcement();
-                UnMuteAll(this.PsychologistChoice);
+                while (true)
+                {
+                    ForceSendAll("***Day Time***");
+                    this.PublicChatMode = true;
+                    ForceSendAll("You got only 60 seconds for chatting");
+                    UnMuteAll(null);
+                    CheckTime(60);
+                    MuteAll();
+                    ForceSendAll("***Voting Time***");
+                    CreatePoll();
+                    Voting();
+                    CheckTime(31);
+                    ShowResults();
+                    Mayor();
+                    if(Ended()!=null)
+                    {
+                        ForceSendAll("The winner is"+Ended());
+                        break;
+                    }
+                    ForceSendAll("***Night***");
+                    UnMuteMafia();
+                    SendAll("You got only 40 seconds for chatting");
+                    CheckTime(40);
+                    MuteAll();
+                    MafiaVoting();
+                    GodFather();
+                    DrLecter();
+                    CityDoctor();
+                    Detective();
+                    Professional();
+                    Psychologist();
+                    DieHard();
+                    NightState();
+                    UpdateDead();
+                    announcement();
+                    Thread.sleep(1000);
+                    if(Ended()!=null)
+                    {
+                        ForceSendAll("The winner is"+Ended());
+                        break;
+                    }
+                    UnMuteAll(this.PsychologistChoice);
+                }
+                Close();
                 //Voting();
                 //Mayor();
 
@@ -270,7 +285,7 @@ public class Server {
         else
             return false;
     }
-    public void SendAll(String string,UserThread ut)
+    public synchronized void SendAll(String string,UserThread ut)
     {
         if(!PublicChatMode)
         {
@@ -323,6 +338,10 @@ public class Server {
                 }
             }
         }
+        for (int i=0;i<Watchers.size();i++)
+        {
+            Watchers.get(i).Receive(ut.getData().getUsername()+" : "+string);
+        }
     }
     private synchronized void Save(String message,String sender)
     {
@@ -333,7 +352,7 @@ public class Server {
             System.err.println("File not found");
         }
     }
-    private String LoadAll()
+    public String LoadAll()
     {
         ArrayList<Message> messages = new ArrayList<>();
         try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(this.file))){
@@ -407,7 +426,7 @@ public class Server {
             }
         }
     }
-    private void SendAll(String msg)
+    private synchronized void SendAll(String msg)
     {
             for (int i=0;i<userThreads.size();i++)
             {
@@ -416,16 +435,24 @@ public class Server {
                     userThreads.get(i).Receive(msg);
                 }
             }
+        for (int i=0;i<Watchers.size();i++)
+        {
+            Watchers.get(i).Receive(msg);
+        }
 
     }
-    private void ForceSendAll(String msg)
+    private synchronized void ForceSendAll(String msg)
     {
         for (int i=0;i<userThreads.size();i++)
         {
                 userThreads.get(i).Receive(msg);
         }
+        for (int i=0;i<Watchers.size();i++)
+        {
+            Watchers.get(i).Receive(msg);
+        }
     }
-    private void ForceSendAll(String msg , UserThread except)
+    private synchronized void ForceSendAll(String msg , UserThread except)
     {
         for (int i=0;i<userThreads.size();i++)
         {
@@ -434,8 +461,12 @@ public class Server {
                 userThreads.get(i).Receive(msg);
             }
         }
+        for (int i=0;i<Watchers.size();i++)
+        {
+            Watchers.get(i).Receive(msg);
+        }
     }
-    private void SendMafia(String msg,UserThread sender)
+    private synchronized void SendMafia(String msg,UserThread sender)
     {
         for (int i=0;i<userThreads.size();i++)
         {
@@ -443,6 +474,10 @@ public class Server {
             {
                 userThreads.get(i).Receive(msg);
             }
+        }
+        for (int i=0;i<Watchers.size();i++)
+        {
+            Watchers.get(i).Receive(msg);
         }
     }
     public UserThread GetPlayer(String name)
@@ -458,208 +493,147 @@ public class Server {
     }
     private void GodFather()
     {
-        for (int i=0;i<userThreads.size();i++)
+        if(Contains(Position.GODFATHER))
         {
-            if(userThreads.get(i).getData().getRole().getCharacter().equals(Position.GODFATHER))
+            for (int i=0;i<userThreads.size();i++)
             {
-                userThreads.get(i).Receive("Choose the civilian you want to kill");
-                userThreads.get(i).setChoosePlayerMode(true);
-                GodFather temp = (GodFather) userThreads.get(i).getData().getRole();
-                while (userThreads.get(i).ChoosePlayer()==null)
+                if(userThreads.get(i).getData().getRole().getCharacter().equals(Position.GODFATHER))
                 {
-                    try {
-                        Thread.sleep(500);
-                    } catch (InterruptedException e) {
-                        System.err.println("InterruptedException");
+                    userThreads.get(i).Receive("Choose the civilian you want to kill");
+                    userThreads.get(i).setChoosePlayerMode(true);
+                    GodFather temp = (GodFather) userThreads.get(i).getData().getRole();
+                    while (userThreads.get(i).ChoosePlayer()==null)
+                    {
+                        try {
+                            Thread.sleep(500);
+                        } catch (InterruptedException e) {
+                            System.err.println("InterruptedException");
+                        }
                     }
+                    UserThread help = GetPlayer(userThreads.get(i).ChoosePlayer());
+                    if(help != null )
+                    {
+                        temp.action(help);
+                    }
+                    userThreads.get(i).Receive("Done");
+                    break;
                 }
-                UserThread help = GetPlayer(userThreads.get(i).ChoosePlayer());
-                if(help != null )
-                {
-                    temp.action(help);
-                }
-                userThreads.get(i).Receive("Done");
-                break;
             }
         }
+        else
+        {
+        }
+
+
     }
     private void DrLecter()
     {
-        for (int i=0;i<userThreads.size();i++)
+        if(Contains(Position.LECTER))
         {
-            if(userThreads.get(i).getData().getRole().getCharacter().equals(Position.LECTER))
+            for (int i=0;i<userThreads.size();i++)
             {
-                userThreads.get(i).Receive("Choose the Mafia you want to save");
-                userThreads.get(i).setChoosePlayerMode(true);
-                Lecter temp = (Lecter) userThreads.get(i).getData().getRole();
-                while (userThreads.get(i).ChoosePlayer()==null)
+                if(userThreads.get(i).getData().getRole().getCharacter().equals(Position.LECTER))
                 {
-                    try {
-                        Thread.sleep(500);
-                    } catch (InterruptedException e) {
-                        System.err.println("InterruptedException");
+                    userThreads.get(i).Receive("Choose the Mafia you want to save");
+                    userThreads.get(i).setChoosePlayerMode(true);
+                    Lecter temp = (Lecter) userThreads.get(i).getData().getRole();
+                    while (userThreads.get(i).ChoosePlayer()==null)
+                    {
+                        try {
+                            Thread.sleep(500);
+                        } catch (InterruptedException e) {
+                            System.err.println("InterruptedException");
+                        }
                     }
+                    UserThread help = GetPlayer(userThreads.get(i).ChoosePlayer());
+                    if(help != null )
+                    {
+                        temp.action(help);
+                    }
+                    userThreads.get(i).Receive("Done");
+                    break;
                 }
-                UserThread help = GetPlayer(userThreads.get(i).ChoosePlayer());
-                if(help != null )
-                {
-                    temp.action(help);
-                }
-                userThreads.get(i).Receive("Done");
-                break;
             }
+        }
+        else
+        {
         }
     }
     private void CityDoctor()
     {
-        for (int i=0;i<userThreads.size();i++)
+        if(Contains(Position.CITYDOCTOR))
         {
-            if(userThreads.get(i).getData().getRole().getCharacter().equals(Position.CITYDOCTOR))
+            for (int i=0;i<userThreads.size();i++)
             {
-                userThreads.get(i).Receive("Choose the player you want to save");
-                userThreads.get(i).setChoosePlayerMode(true);
-                CityDoctor temp = (CityDoctor) userThreads.get(i).getData().getRole();
-                while (userThreads.get(i).ChoosePlayer()==null)
+                if(userThreads.get(i).getData().getRole().getCharacter().equals(Position.CITYDOCTOR))
                 {
-                    try {
-                        Thread.sleep(500);
-                    } catch (InterruptedException e) {
-                        System.err.println("InterruptedException");
+                    userThreads.get(i).Receive("Choose the player you want to save");
+                    userThreads.get(i).setChoosePlayerMode(true);
+                    CityDoctor temp = (CityDoctor) userThreads.get(i).getData().getRole();
+                    while (userThreads.get(i).ChoosePlayer()==null)
+                    {
+                        try {
+                            Thread.sleep(500);
+                        } catch (InterruptedException e) {
+                            System.err.println("InterruptedException");
+                        }
                     }
+                    UserThread help = GetPlayer(userThreads.get(i).ChoosePlayer());
+                    if(help != null )
+                    {
+                        temp.action(help);
+                    }
+                    userThreads.get(i).Receive("Done");
+                    break;
                 }
-                UserThread help = GetPlayer(userThreads.get(i).ChoosePlayer());
-                if(help != null )
-                {
-                    temp.action(help);
-                }
-                userThreads.get(i).Receive("Done");
-                break;
             }
         }
     }
     private void Detective()
     {
-        for (int i=0;i<userThreads.size();i++)
+        if(Contains(Position.DETECTIVE))
         {
-            if(userThreads.get(i).getData().getRole().getCharacter().equals(Position.DETECTIVE))
+            for (int i=0;i<userThreads.size();i++)
             {
-                userThreads.get(i).Receive("Choose the player you want to know about");
-                userThreads.get(i).setChoosePlayerMode(true);
-                Detective temp = (Detective) userThreads.get(i).getData().getRole();
-                while (userThreads.get(i).ChoosePlayer()==null)
+                if(userThreads.get(i).getData().getRole().getCharacter().equals(Position.DETECTIVE))
                 {
-                    try {
-                        Thread.sleep(500);
-                    } catch (InterruptedException e) {
-                        System.err.println("InterruptedException");
+                    userThreads.get(i).Receive("Choose the player you want to know about");
+                    userThreads.get(i).setChoosePlayerMode(true);
+                    Detective temp = (Detective) userThreads.get(i).getData().getRole();
+                    while (userThreads.get(i).ChoosePlayer()==null)
+                    {
+                        try {
+                            Thread.sleep(500);
+                        } catch (InterruptedException e) {
+                            System.err.println("InterruptedException");
+                        }
                     }
+                    UserThread help = GetPlayer(userThreads.get(i).ChoosePlayer());
+                    if(help != null )
+                    {
+                        userThreads.get(i).Receive(temp.action(help));
+                    }
+                    userThreads.get(i).Receive("Done");
+                    break;
                 }
-                UserThread help = GetPlayer(userThreads.get(i).ChoosePlayer());
-                if(help != null )
-                {
-                    userThreads.get(i).Receive(temp.action(help));
-                }
-                userThreads.get(i).Receive("Done");
-                break;
             }
         }
+        else
+        {
+        }
+
     }
     private void Professional()
     {
-        for (int i=0;i<userThreads.size();i++)
+        if(Contains(Position.PROFESSIONAL))
         {
-            if(userThreads.get(i).getData().getRole().getCharacter().equals(Position.PROFESSIONAL))
+            for (int i=0;i<userThreads.size();i++)
             {
-                userThreads.get(i).Receive("Do you want to use your ability ? YES-NO");
-                userThreads.get(i).setChoosePlayerMode(true);
-                Professional temp = (Professional) userThreads.get(i).getData().getRole();
-                while (userThreads.get(i).poll()==null)
+                if(userThreads.get(i).getData().getRole().getCharacter().equals(Position.PROFESSIONAL))
                 {
-                    try {
-                        Thread.sleep(500);
-                    } catch (InterruptedException e) {
-                        System.err.println("InterruptedException");
-                    }
-                }
-                if(userThreads.get(i).poll().equals("Yes"))
-                {
-                    while (userThreads.get(i).ChoosePlayer()==null)
-                    {
-                        try {
-                            Thread.sleep(500);
-                        } catch (InterruptedException e) {
-                            System.err.println("InterruptedException");
-                        }
-                    }
-                    UserThread help = GetPlayer(userThreads.get(i).ChoosePlayer());
-                    if(help != null )
-                    {
-                        temp.action(help);
-                    }
-                    userThreads.get(i).Receive("Done");
-                    break;
-                }
-                else
-                {
-                    break;
-                }
-
-            }
-        }
-    }
-    private void Psychologist()
-    {
-        for (int i=0;i<userThreads.size();i++)
-        {
-            if(userThreads.get(i).getData().getRole().getCharacter().equals(Position.PSYCHOLOGIST))
-            {
-                userThreads.get(i).Receive("Do you want to use your ability ? YES-NO");
-                userThreads.get(i).setChoosePlayerMode(true);
-                Psychologist temp = (Psychologist) userThreads.get(i).getData().getRole();
-                while (userThreads.get(i).poll()==null)
-                {
-                    try {
-                        Thread.sleep(500);
-                    } catch (InterruptedException e) {
-                        System.err.println("InterruptedException");
-                    }
-                }
-                if(userThreads.get(i).poll().equals("Yes"))
-                {
-                    while (userThreads.get(i).ChoosePlayer()==null)
-                    {
-                        try {
-                            Thread.sleep(500);
-                        } catch (InterruptedException e) {
-                            System.err.println("InterruptedException");
-                        }
-                    }
-                    UserThread help = GetPlayer(userThreads.get(i).ChoosePlayer());
-                    this.PsychologistChoice = help;
-                    if(help != null )
-                    {
-                        temp.action(help);
-                    }
-                    userThreads.get(i).Receive("Done");
-                    break;
-                }
-                else
-                {
-                    break;
-                }
-            }
-        }
-    }
-    private void DieHard()
-    {
-        for (int i=0;i<userThreads.size();i++)
-        {
-            if(userThreads.get(i).getData().getRole().getCharacter().equals(Position.DIEHARD)) {
-                DieHard temp1 = (DieHard) userThreads.get(i).getData().getRole();
-                if (temp1.getAnounceCount() < 2)
-                {
-                    userThreads.get(i).Receive("Do you want to use your ability? YES-NO");
+                    userThreads.get(i).Receive("Do you want to use your ability ? YES-NO");
                     userThreads.get(i).setChoosePlayerMode(true);
+                    Professional temp = (Professional) userThreads.get(i).getData().getRole();
                     while (userThreads.get(i).poll()==null)
                     {
                         try {
@@ -668,9 +642,9 @@ public class Server {
                             System.err.println("InterruptedException");
                         }
                     }
-                    if(userThreads.get(i).poll().equals("Yes"))
+                    if(userThreads.get(i).poll().equals("YES"))
                     {
-                        while (!DiehardPermission)
+                        while (userThreads.get(i).ChoosePlayer()==null)
                         {
                             try {
                                 Thread.sleep(500);
@@ -678,9 +652,11 @@ public class Server {
                                 System.err.println("InterruptedException");
                             }
                         }
-                        DieHard temp = (DieHard) userThreads.get(i).getData().getRole();
-                        temp.AnounceRequest();
-                        this.anouncement=true;
+                        UserThread help = GetPlayer(userThreads.get(i).ChoosePlayer());
+                        if(help != null )
+                        {
+                            temp.action(help);
+                        }
                         userThreads.get(i).Receive("Done");
                         break;
                     }
@@ -689,13 +665,115 @@ public class Server {
                         break;
                     }
                 }
-                else
+            }
+        }
+        else
+        {
+        }
+    }
+    private void Psychologist()
+    {
+        if(Contains(Position.PSYCHOLOGIST))
+        {
+            for (int i=0;i<userThreads.size();i++)
+            {
+                if(userThreads.get(i).getData().getRole().getCharacter().equals(Position.PSYCHOLOGIST))
                 {
-                    userThreads.get(i).Receive("You can't use your ability");
-                    break;
+                    userThreads.get(i).Receive("Do you want to use your ability ? YES-NO");
+                    userThreads.get(i).setChoosePlayerMode(true);
+                    Psychologist temp = (Psychologist) userThreads.get(i).getData().getRole();
+                    while (userThreads.get(i).poll()==null)
+                    {
+                        try {
+                            Thread.sleep(500);
+                        } catch (InterruptedException e) {
+                            System.err.println("InterruptedException");
+                        }
+                    }
+                    if(userThreads.get(i).poll().equals("YES"))
+                    {
+
+                        while (userThreads.get(i).ChoosePlayer()==null)
+                        {
+                            try {
+                                Thread.sleep(500);
+                            } catch (InterruptedException e) {
+                                System.err.println("InterruptedException");
+                            }
+                        }
+                        UserThread help = GetPlayer(userThreads.get(i).ChoosePlayer());
+                        this.PsychologistChoice = help;
+                        if(help != null )
+                        {
+                            temp.action(help);
+                        }
+                        userThreads.get(i).Receive("Done");
+                        break;
+                    }
+                    else
+                    {
+                        break;
+                    }
                 }
             }
         }
+        else
+        {
+        }
+    }
+    private void DieHard()
+    {
+        if(Contains(Position.DIEHARD))
+        {
+            for (int i=0;i<userThreads.size();i++)
+            {
+                if(userThreads.get(i).getData().getRole().getCharacter().equals(Position.DIEHARD)) {
+                    DieHard temp1 = (DieHard) userThreads.get(i).getData().getRole();
+                    if (temp1.getAnounceCount() < 2)
+                    {
+                        userThreads.get(i).Receive("Do you want to use your ability? YES-NO");
+                        userThreads.get(i).setChoosePlayerMode(true);
+                        while (userThreads.get(i).poll()==null)
+                        {
+                            try {
+                                Thread.sleep(500);
+                            } catch (InterruptedException e) {
+                                System.err.println("InterruptedException");
+                            }
+                        }
+                        if(userThreads.get(i).poll().equals("YES"))
+                        {
+                            while (!DiehardPermission)
+                            {
+                                try {
+                                    Thread.sleep(500);
+                                } catch (InterruptedException e) {
+                                    System.err.println("InterruptedException");
+                                }
+                            }
+                            DieHard temp = (DieHard) userThreads.get(i).getData().getRole();
+                            temp.AnounceRequest();
+                            this.anouncement=true;
+                            userThreads.get(i).Receive("Done");
+                            break;
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        userThreads.get(i).Receive("You can't use your ability");
+                        break;
+                    }
+                }
+            }
+        }
+        else
+        {
+        }
+
     }
     private void MafiaVotingThread(int index)
     {
@@ -720,12 +798,18 @@ public class Server {
     }
     private void MafiaVoting()
     {
-        for (int i=0;i<userThreads.size();i++)
+        if(Contains(Position.GODFATHER))
         {
-            if(userThreads.get(i).getData().getRole().getCharacter().equals(Position.LECTER) || userThreads.get(i).getData().getRole().getCharacter().equals(Position.SIMPLE_MAFIA))
+            for (int i=0;i<userThreads.size();i++)
             {
-                   MafiaVotingThread(i);
+                if(userThreads.get(i).getData().getRole().getCharacter().equals(Position.LECTER) || userThreads.get(i).getData().getRole().getCharacter().equals(Position.SIMPLE_MAFIA))
+                {
+                    MafiaVotingThread(i);
+                }
             }
+        }
+        else
+        {
         }
     }
     private void UpdateDead()
@@ -734,6 +818,7 @@ public class Server {
           {
               if(!userThreads.get(i).getData().getRole().isAlive())
               {
+                  WatchRequest(userThreads.get(i));
                   Dead.add(userThreads.get(i));
               }
           }
@@ -746,6 +831,30 @@ public class Server {
                   it.remove();
               }
           }
+    }
+    private void WatchRequest(UserThread ut)
+    {
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                ut.setDeadMode(true);
+                ut.Receive("Do you want stay and just watch the game? YES-NO");
+                while (ut.Watch()==null)
+                {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        System.err.println("Interruption Error");
+                    }
+                }
+                if(ut.Watch().equals("YES"))
+                {
+                    ut.Receive("Done");
+                    Watchers.add(ut);
+                }
+            }
+        });
+        thread.start();
     }
     private void CreatePoll()
     {
@@ -807,17 +916,32 @@ public class Server {
     {
         Set<String> keyset = Results().keySet();
         ArrayList<String> keytemp = new ArrayList<String>(keyset);
-        if(Results().size()==1)
+        int count =0;
+        for (int i=0;i<Results().size();i++)
         {
-            GetPlayer(keytemp.get(0)).getData().getRole().setAlive(false);
-            ForceSendAll(GetPlayer(keytemp.get(0)).getData().getUsername()+ " will leave us");
+          if(Results().get(keytemp.get(i))==0)
+          {
+              count++;
+          }
+        }
+        if(count==Results().size())
+        {
+            ForceSendAll("NOT VALID VOTING");
         }
         else
         {
-            Random random = new Random();
-            int choice = random.nextInt(Results().size());
-            GetPlayer(keytemp.get(choice)).getData().getRole().setAlive(false);
-            ForceSendAll(GetPlayer(keytemp.get(choice)).getData().getUsername()+ " will leave us");
+            if(Results().size()==1)
+            {
+                GetPlayer(keytemp.get(0)).getData().getRole().setGotShot(true);
+                ForceSendAll(GetPlayer(keytemp.get(0)).getData().getUsername()+ " will leave us");
+            }
+            else
+            {
+                Random random = new Random();
+                int choice = random.nextInt(Results().size());
+                GetPlayer(keytemp.get(choice)).getData().getRole().setAlive(false);
+                ForceSendAll(GetPlayer(keytemp.get(choice)).getData().getUsername()+ " will leave us");
+            }
         }
     }
     private void VotingThread(int index)
@@ -859,32 +983,39 @@ public class Server {
     }
     private void Mayor()
     {
-        for (int i=0;i<userThreads.size();i++)
+        if(Contains(Position.MAYOR))
         {
-            if(userThreads.get(i).getData().getRole().getCharacter().equals(Position.MAYOR))
+            for (int i=0;i<userThreads.size();i++)
             {
-                userThreads.get(i).Receive("Do you want to cancel voting ? YES-NO");
-                userThreads.get(i).setMayorMode(true);
-                while (userThreads.get(i).MayorDecision()==null)
+                if(userThreads.get(i).getData().getRole().getCharacter().equals(Position.MAYOR))
                 {
-                    try {
-                        Thread.sleep(500);
-                    } catch (InterruptedException e) {
-                        System.err.println("InterruptedException");
+                    userThreads.get(i).Receive("Do you want to cancel voting ? YES-NO");
+                    userThreads.get(i).setMayorMode(true);
+                    while (userThreads.get(i).MayorDecision()==null)
+                    {
+                        try {
+                            Thread.sleep(500);
+                        } catch (InterruptedException e) {
+                            System.err.println("InterruptedException");
+                        }
                     }
-                }
-                if(userThreads.get(i).MayorDecision().equals("YES"))
-                {
+                    if(userThreads.get(i).MayorDecision().equals("YES"))
+                    {
 
+                    }
+                    else
+                    {
+                        VotingKill();
+                        UpdateDead();
+                    }
+                    break;
                 }
-                else
-                {
-                    VotingKill();
-                    UpdateDead();
-                }
-                break;
             }
         }
+        else
+        {
+        }
+
     }
     private void NightState()
     {
@@ -987,10 +1118,11 @@ public class Server {
             }
         }
     }
-    public void RemoveThread(UserThread thread,String mode)
+    public synchronized void RemoveThread(UserThread thread,String mode)
     {
         if(mode.equals("Normal"))
         {
+            System.err.println("Normal player disconnection-Exit command");
             Iterator<UserThread> it = userThreads.iterator();
             String name = "";
             while (it.hasNext())
@@ -1017,7 +1149,8 @@ public class Server {
         }
         else
         {
-            System.err.println("A player disconnected");
+            System.err.println("UnNormal player disconnection");
+            System.err.println("a player disconnected");
             Iterator<UserThread> it = userThreads.iterator();
             String name = "";
             while (it.hasNext())
@@ -1056,6 +1189,10 @@ public class Server {
     public boolean isJoinigFinished() {
         return joinigFinished;
     }
+    public boolean isPublicChatMode() {
+        return PublicChatMode;
+    }
+
     private void CheckTime(int seconds)
     {
         Timer timer = new Timer();
@@ -1066,6 +1203,17 @@ public class Server {
             e.printStackTrace();
         }
         timer.cancel();
+    }
+    private boolean Contains(Position p)
+    {
+        for (int i=0;i<userThreads.size();i++)
+        {
+            if(userThreads.get(i).getData().getRole().getCharacter().equals(p))
+            {
+                return true;
+            }
+        }
+        return false;
     }
     private String Ended()
     {
@@ -1093,6 +1241,15 @@ public class Server {
         else
         {
             return null;
+        }
+    }
+    private void Close()
+    {
+        Iterator<UserThread> it = userThreads.iterator();
+        while (it.hasNext())
+        {
+            UserThread temp = it.next();
+            temp.Disconnect();
         }
     }
 }

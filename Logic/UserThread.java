@@ -26,11 +26,13 @@ public class UserThread extends Thread{
     private boolean VotingMode = false;
     private boolean MafiaVotingMode = false;
     private boolean MayorMode  = false;
+    private boolean DeadMode = false;
     private String  choosenPlayer = null;
     private String MafiaVote = null;
     private String Vote = null;
     private String poll= null;
     private String MayorDecision=null;
+    private String Watch = null;
     public UserThread(Socket socket,Server server)
     {
         this.socket = socket;
@@ -80,7 +82,28 @@ public class UserThread extends Thread{
 
                 String message = in.readUTF();
                 Thread.sleep(200);
-                if(VotingMode)
+                if(message.equals("Exit"))
+                {
+//                    out.writeUTF("Close");
+//                    socket.close();
+//                    server.RemoveThread(this,"Normal");
+                    Disconnect();
+                    break;
+                }
+                if(DeadMode)
+                {
+                    if(message.equals("YES"))
+                    {
+                        this.Watch = "YES";
+                        DeadMode=false;
+                    }
+                    else
+                    {
+                        this.Watch="NO";
+                        Thread.currentThread().interrupt();
+                    }
+                }
+                else if(VotingMode)
                 {
                     boolean validity = false;
                     while (!validity)
@@ -274,7 +297,7 @@ public class UserThread extends Thread{
                     {
                         if(message.equals("YES"))
                         {
-                            this.poll="Yes";
+                            this.poll="YES";
                             out.writeUTF("Choose the player you want to kill");
                             message= in.readUTF();
                             boolean validity = false;
@@ -385,13 +408,17 @@ public class UserThread extends Thread{
                 }
                 else
                 {
-                    if(message.equals("Exit"))
+                    if(this.server.isPublicChatMode() && message.equals("History"))
                     {
-                        out.writeUTF("Close");
-                        socket.close();
-                        server.RemoveThread(this,"Normal");
-                        break;
+                        this.Receive(this.server.LoadAll());
                     }
+//                    if(message.equals("Exit"))
+//                    {
+//                        out.writeUTF("Close");
+//                        socket.close();
+//                        server.RemoveThread(this,"Normal");
+//                        break;
+//                    }
                     this.server.SendAll(message,this);
                 }
             }
@@ -462,6 +489,10 @@ public class UserThread extends Thread{
     {
         return poll;
     }
+    public String Watch()
+    {
+        return Watch;
+    }
     public String MayorDecision()
     {
         return this.MayorDecision;
@@ -509,6 +540,19 @@ public class UserThread extends Thread{
         MayorMode = mayorMode;
     }
 
+    public void setDeadMode(boolean deadMode) {
+        DeadMode = deadMode;
+    }
+    public void Disconnect()
+    {
+        try {
+            this.out.writeUTF("Close");
+            socket.close();
+            server.RemoveThread(this,"Normal");
+        } catch (IOException exception) {
+            exception.printStackTrace();
+        }
+    }
     public boolean isMayorMode() {
         return MayorMode;
     }
