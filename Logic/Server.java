@@ -30,12 +30,25 @@ public class Server {
     private boolean DiehardPermission= false;
     private boolean PublicChatMode = false;
     private File file;
+    public static final String RESET = "\u001B[0m";
+    public static final String BLACK = "\u001B[30m";
+    public static final String RED = "\u001B[31m";
+    public static final String GREEN = "\u001B[32m";
+    public static final String YELLOW = "\u001B[33m";
+    public static final String BLUE = "\u001B[34m";
+    public static final String PURPLE = "\u001B[35m";
+    public static final String CYAN = "\u001B[36m";
+    public static final String WHITE = "\u001B[37m";
     public Server(int port)
     {
 
         this.name = "Server1";
         this.port= port;
-        this.file = new File("Messages.bin");
+        this.file = new File("Messages.txt");
+        if(this.file.exists())
+        {
+            this.file.delete();
+        }
         try {
             serverSocket = new ServerSocket(this.port);
         } catch (IOException exception) {
@@ -345,28 +358,29 @@ public class Server {
     }
     private synchronized void Save(String message,String sender)
     {
-        try(ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(this.file,true))) {
-            Message text = new Message(message,sender);
-            out.writeObject(text);
-        } catch (IOException exception) {
+          this.file = new File("Messages.txt");
+          try(FileWriter fileWriter = new FileWriter(file,true);BufferedWriter bw = new BufferedWriter(fileWriter)) {
+              bw.write(sender + " : "+ message + "\n");
+              bw.flush();
+          }catch (IOException exception) {
             System.err.println("File not found");
         }
     }
     public String LoadAll()
     {
-        ArrayList<Message> messages = new ArrayList<>();
-        try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(this.file))){
-            while (in.available()>0)
-            {
-                messages.add((Message) in.readObject());
-            }
-        }catch (IOException | ClassNotFoundException exception) {
-            System.err.println("File not found");
-        }
         StringBuilder stringBuilder = new StringBuilder();
-        for (int i=0;i<messages.size();i++)
+        try(FileReader fileReader = new FileReader(file);BufferedReader br = new BufferedReader(fileReader)) {
+            int count;
+            char[] buffer = new char[2048];
+            while (br.ready())
+            {
+                count = br.read(buffer);
+                stringBuilder.append(new String(buffer,0,count));
+            }
+            return stringBuilder.toString();
+        }catch (IOException e)
         {
-            stringBuilder.append(messages.get(i).getSender()).append(" : ").append(messages.get(i).getMessage());
+            System.err.println("IOError in Load method");
         }
         return stringBuilder.toString();
     }
@@ -1044,10 +1058,10 @@ public class Server {
             StringBuilder roles = new StringBuilder();
             for (int i=0;i<Dead.size();i++)
             {
-                    roles.append(Dead.get(i).getData().getRole().getCharacter().toString()).append(" ");
+                    roles.append(Dead.get(i).getData().getRole().getCharacter().toString()).append(" , ");
             }
-            ForceSendAll("diehard got announcement");
-            ForceSendAll(roles.toString());
+            ForceSendAll("Diehard got announcement");
+            ForceSendAll(roles.toString()+" IS OUT");
         }
         else
         {
@@ -1232,11 +1246,11 @@ public class Server {
         }
         if(countMafia==0)
         {
-            return "Civilians";
+            return " Civilians";
         }
         else if(countMafia >= countCivilian)
         {
-            return "Mafia";
+            return " Mafia";
         }
         else
         {

@@ -419,7 +419,10 @@ public class UserThread extends Thread{
 //                        server.RemoveThread(this,"Normal");
 //                        break;
 //                    }
-                    this.server.SendAll(message,this);
+                    if(!message.equals("History"))
+                    {
+                        this.server.SendAll(message,this);
+                    }
                 }
             }
         }
