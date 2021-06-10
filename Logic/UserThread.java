@@ -84,10 +84,11 @@ public class UserThread extends Thread{
                 Thread.sleep(200);
                 if(message.equals("Exit"))
                 {
-//                    out.writeUTF("Close");
-//                    socket.close();
-//                    server.RemoveThread(this,"Normal");
-                    Disconnect();
+                    out.writeUTF("Close");
+                    socket.close();
+                    in.close();
+                    out.close();
+                    server.RemoveThread(this,"Normal");
                     break;
                 }
                 if(DeadMode)
@@ -96,11 +97,17 @@ public class UserThread extends Thread{
                     {
                         this.Watch = "YES";
                         DeadMode=false;
+                        this.server.WatchRequestCompleted();
                     }
                     else
                     {
                         this.Watch="NO";
-                        Thread.currentThread().interrupt();
+                        this.server.WatchRequestCompleted();
+                        out.writeUTF("Close");
+                        socket.close();
+                        in.close();
+                        out.close();
+                        server.RemoveThread(this,"Normal");
                     }
                 }
                 else if(VotingMode)
@@ -425,9 +432,24 @@ public class UserThread extends Thread{
                     }
                 }
             }
+            out.writeUTF("Close");
+            socket.close();
+            in.close();
+            out.close();
+            server.RemoveThread(this,"Normal");
         }
         catch (SocketException e)
         {
+            try
+            {
+                out.writeUTF("Close");
+                socket.close();
+                in.close();
+                out.close();
+            }catch (IOException ex)
+            {
+                System.err.println("IOError - in socket Excp UT");
+            }
             this.server.RemoveThread(this,"UnNormal");
         }
         catch (IOException | InterruptedException e)
@@ -553,7 +575,7 @@ public class UserThread extends Thread{
             socket.close();
             server.RemoveThread(this,"Normal");
         } catch (IOException exception) {
-            exception.printStackTrace();
+            System.err.println("Error while disconnecting in userthread");
         }
     }
     public boolean isMayorMode() {

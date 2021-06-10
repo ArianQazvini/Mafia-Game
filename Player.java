@@ -14,6 +14,9 @@ public class Player {
     private Socket connection;
     private Thread read;
     private Thread send;
+    private boolean connected= true;
+    private DataOutputStream out = null;
+    private DataInputStream in = null;
     public Player(String ip,int port) {
         try {
             connection = new Socket(ip,port );
@@ -40,30 +43,41 @@ public class Player {
         this.send  = new Thread(new Runnable() {
             @Override
             public void run() {
-                DataOutputStream out = null;
                 try {
                     out = new DataOutputStream(connection.getOutputStream());
                 }
                 catch (IOException exception) {
                     exception.printStackTrace();
                 }
-                while (true)
+                while (connected)
                 {
+//                    if(!connected)
+//                    {
+//                        try {
+//                            connection.close();
+//                        } catch (IOException exception) {
+//                            System.err.println("Error in IO -Sending Client ");
+//                        }
+//                        break;
+//                    }
+                    if(!connected)
+                    {
+                        break;
+                    }
                     String msg = scanner.nextLine();
                     try {
                         out.writeUTF(msg);
-                        Thread.sleep(500);
-                        if(msg.equals("Exit"))
-                        {
-                            out.close();
-                            break;
-                        }
-
+                        Thread.sleep(900);
                     }
                     catch (IOException | InterruptedException exception) {
-                        System.err.println("Error in IO -Sending Client ");
+                        try {
+                            out.close();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                        break;
+//                        System.err.println("Error in IO -Sending Client ");
                     }
-
                 }
             }
         });
@@ -71,36 +85,53 @@ public class Player {
     }
     public void Read()
     {
-
         this.read  = new Thread(new Runnable() {
             @Override
             public void run() {
-                DataInputStream in = null;
                 try {
                     in = new DataInputStream(connection.getInputStream());
                 }
                 catch (IOException exception) {
                     exception.printStackTrace();
                 }
-                while (true)
+                while (connected)
                 {
                     try {
                         String msg = in.readUTF();
                         if(msg.equals("Close"))
                         {
-                            in.close();
+                            Thread.sleep(500);
                             connection.close();
+                            setConnected(false);
                             break;
                         }
                             System.out.println(msg);
                     }
-                    catch (IOException exception) {
+                    catch (IOException | InterruptedException exception) {
                         System.err.println("Error in reading - Read Client");
                     }
+                }
+                try {
+                    in.close();
+                    out.close();
+                } catch (IOException exception) {
+                    exception.printStackTrace();
                 }
             }
         });
         this.read.start();
     }
 
+    public void setConnected(boolean connected) {
+        this.connected = connected;
+    }
+    public boolean isConnected() {
+        return connected;
+    }
+    public DataInputStream getIn() {
+        return in;
+    }
+    public DataOutputStream getOut() {
+        return out;
+    }
 }

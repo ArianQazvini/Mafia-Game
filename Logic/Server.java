@@ -19,16 +19,21 @@ public class Server {
     private ArrayList<UserThread> Dead = new ArrayList<>();
     private ArrayList<UserThread> Watchers = new ArrayList<>();
     private ArrayList<Role> roles = new ArrayList<>();
+    private UserThread PsychologistChoice=null;
     private HashMap<String , ArrayList<UserThread>> poll = new HashMap<>();
     private ServerSocket serverSocket = null;
     private String name;
     private int port;
     private int ready=0;
+    private int NowDead = 0;
+    private int WatchRequests = 0;
     private boolean joinigFinished=false;
-    private UserThread PsychologistChoice=null;
     private boolean anouncement=false;
     private boolean DiehardPermission= false;
     private boolean PublicChatMode = false;
+//    private boolean PsychoMode = false;
+//    private boolean ProMode = false;
+    private boolean DieHardMode = true;
     private File file;
     public static final String RESET = "\u001B[0m";
     public static final String BLACK = "\u001B[30m";
@@ -133,7 +138,7 @@ public class Server {
                 while (!CanStartGame())
                 {
                     System.out.println("Server is waiting for player to get ready..");
-                    Thread.sleep(1000);
+                    Thread.sleep(1500);
                     if(CanStartGame())
                         break;
                 }
@@ -165,6 +170,10 @@ public class Server {
                         ForceSendAll("The winner is"+Ended());
                         break;
                     }
+                    while (!canResume())
+                    {
+                        Thread.sleep(1500);
+                    }
                     ForceSendAll("***Night***");
                     UnMuteMafia();
                     SendAll("You got only 40 seconds for chatting");
@@ -178,6 +187,10 @@ public class Server {
                     Professional();
                     Psychologist();
                     DieHard();
+                    while (DieHardMode)
+                    {
+                        Thread.sleep(500);
+                    }
                     NightState();
                     UpdateDead();
                     announcement();
@@ -186,6 +199,10 @@ public class Server {
                     {
                         ForceSendAll("The winner is"+Ended());
                         break;
+                    }
+                    while (!canResume())
+                    {
+                        Thread.sleep(1500);
                     }
                     UnMuteAll(this.PsychologistChoice);
                 }
@@ -308,7 +325,7 @@ public class Server {
             }
             else
             {
-                ut.Receive("You : "+string+"✓✓");
+                ut.Receive("You : "+string+GREEN+"✓✓"+RESET);
                 for (int i=0;i<userThreads.size();i++)
                 {
                     if(userThreads.get(i).equals(ut))
@@ -514,6 +531,7 @@ public class Server {
                 if(userThreads.get(i).getData().getRole().getCharacter().equals(Position.GODFATHER))
                 {
                     userThreads.get(i).Receive("Choose the civilian you want to kill");
+                    userThreads.get(i).Receive(GetAllplayers());
                     userThreads.get(i).setChoosePlayerMode(true);
                     GodFather temp = (GodFather) userThreads.get(i).getData().getRole();
                     while (userThreads.get(i).ChoosePlayer()==null)
@@ -582,6 +600,7 @@ public class Server {
                 if(userThreads.get(i).getData().getRole().getCharacter().equals(Position.CITYDOCTOR))
                 {
                     userThreads.get(i).Receive("Choose the player you want to save");
+                    userThreads.get(i).Receive(GetAllplayers());
                     userThreads.get(i).setChoosePlayerMode(true);
                     CityDoctor temp = (CityDoctor) userThreads.get(i).getData().getRole();
                     while (userThreads.get(i).ChoosePlayer()==null)
@@ -612,6 +631,7 @@ public class Server {
                 if(userThreads.get(i).getData().getRole().getCharacter().equals(Position.DETECTIVE))
                 {
                     userThreads.get(i).Receive("Choose the player you want to know about");
+                    userThreads.get(i).Receive(GetAllplayers());
                     userThreads.get(i).setChoosePlayerMode(true);
                     Detective temp = (Detective) userThreads.get(i).getData().getRole();
                     while (userThreads.get(i).ChoosePlayer()==null)
@@ -658,6 +678,7 @@ public class Server {
                     }
                     if(userThreads.get(i).poll().equals("YES"))
                     {
+                        userThreads.get(i).Receive(GetAllplayers());
                         while (userThreads.get(i).ChoosePlayer()==null)
                         {
                             try {
@@ -706,7 +727,7 @@ public class Server {
                     }
                     if(userThreads.get(i).poll().equals("YES"))
                     {
-
+                        userThreads.get(i).Receive(GetAllplayers());
                         while (userThreads.get(i).ChoosePlayer()==null)
                         {
                             try {
@@ -769,10 +790,12 @@ public class Server {
                             temp.AnounceRequest();
                             this.anouncement=true;
                             userThreads.get(i).Receive("Done");
+                            DieHardMode = false;
                             break;
                         }
                         else
                         {
+                            DieHardMode = false;
                             break;
                         }
                     }
@@ -828,6 +851,13 @@ public class Server {
     }
     private void UpdateDead()
     {
+        for (int i=0;i<userThreads.size();i++)
+        {
+            if(!userThreads.get(i).getData().getRole().isAlive())
+            {
+                NowDead++;
+            }
+        }
           for (int i=0;i<userThreads.size();i++)
           {
               if(!userThreads.get(i).getData().getRole().isAlive())
@@ -869,6 +899,23 @@ public class Server {
             }
         });
         thread.start();
+    }
+    public synchronized void WatchRequestCompleted()
+    {
+        this.WatchRequests++;
+    }
+    private boolean canResume()
+    {
+        if(WatchRequests == NowDead)
+        {
+            WatchRequests = 0;
+            NowDead = 0;
+            return true;
+        }
+        else
+        {
+            return false;
+        }
     }
     private void CreatePoll()
     {
