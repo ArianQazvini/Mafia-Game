@@ -7,6 +7,7 @@ import com.company.Mafias.Lecter;
 import com.company.Mafias.Mafia;
 import com.company.PlayerData;
 
+import java.beans.beancontext.BeanContextServiceRevokedEvent;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -103,11 +104,12 @@ public class UserThread extends Thread{
                     {
                         this.Watch="NO";
                         this.server.WatchRequestCompleted();
-                        out.writeUTF("Close");
-                        socket.close();
-                        in.close();
-                        out.close();
-                        server.RemoveThread(this,"Normal");
+                        break;
+//                        out.writeUTF("Close");
+//                        socket.close();
+//                        in.close();
+//                        out.close();
+//                        server.RemoveThread(this,"Normal");
                     }
                 }
                 else if(VotingMode)
@@ -135,7 +137,15 @@ public class UserThread extends Thread{
                         }
                         else
                         {
-                            message = in.readUTF();
+                            Thread.sleep(500);
+                            if(!VotingMode)
+                            {
+                                validity=true;
+                            }
+                            else
+                            {
+                                message = in.readUTF();
+                            }
                         }
                     }
                 }
@@ -185,7 +195,6 @@ public class UserThread extends Thread{
                             else
                             {
                                 choosenPlayer=message;
-                                ChoosePlayer();
                                 ChoosePlayerMode = false;
                                 validity=true;
                             }
@@ -231,7 +240,6 @@ public class UserThread extends Thread{
                                     }
                                 }
                                 choosenPlayer=message;
-                                ChoosePlayer();
                                 ChoosePlayerMode = false;
                                 validity=true;
                             }
@@ -269,7 +277,6 @@ public class UserThread extends Thread{
                             }
                         }
                         choosenPlayer=message;
-                        ChoosePlayer();
                         ChoosePlayerMode = false;
                     }
                     else if(this.getData().getRole().getCharacter().equals(Position.DETECTIVE))
@@ -288,7 +295,6 @@ public class UserThread extends Thread{
                             else
                             {
                                 choosenPlayer=message;
-                                ChoosePlayer();
                                 ChoosePlayerMode = false;
                                 validity=true;
                             }
@@ -320,7 +326,6 @@ public class UserThread extends Thread{
                                 }
                                 else {
                                     choosenPlayer=message;
-                                    ChoosePlayer();
                                     ChoosePlayerMode = false;
                                     validity=true;
                                 }
@@ -358,7 +363,6 @@ public class UserThread extends Thread{
                                 }
                                 else {
                                     choosenPlayer=message;
-                                    ChoosePlayer();
                                     ChoosePlayerMode = false;
                                     validity=true;
                                 }

@@ -272,11 +272,8 @@ public class Server {
         int j=1;
         for (int i=0;i<userThreads.size();i++)
         {
-            if(userThreads.get(i).getData().getRole().isAlive())
-            {
                 stringBuilder.append((j)).append("-").append(userThreads.get(i).getData().getUsername()).append("\n");
                 j++;
-            }
         }
         return stringBuilder.toString();
     }
@@ -786,8 +783,7 @@ public class Server {
                                     System.err.println("InterruptedException");
                                 }
                             }
-                            DieHard temp = (DieHard) userThreads.get(i).getData().getRole();
-                            temp.AnounceRequest();
+                            temp1.AnounceRequest();
                             this.anouncement=true;
                             userThreads.get(i).Receive("Done");
                             DieHardMode = false;
@@ -1105,10 +1101,10 @@ public class Server {
             StringBuilder roles = new StringBuilder();
             for (int i=0;i<Dead.size();i++)
             {
-                    roles.append(Dead.get(i).getData().getRole().getCharacter().toString()).append(" , ");
+                    roles.append(Dead.get(i).getData().getRole().getCharacter().toString()).append("  ");
             }
             ForceSendAll("Diehard got announcement");
-            ForceSendAll(roles.toString()+" IS OUT");
+            ForceSendAll(roles.toString()+" is out");
         }
         else
         {
