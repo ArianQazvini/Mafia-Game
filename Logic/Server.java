@@ -157,12 +157,12 @@ public class Server {
                     this.PublicChatMode = true;
                     ForceSendAll("You got only 60 seconds for chatting");
                     UnMuteAll(null);
-                    CheckTime(60);
+                    Delay(60);
                     MuteAll();
                     ForceSendAll("***Voting Time***");
                     CreatePoll();
                     Voting();
-                    CheckTime(31);
+                    Delay(31);
                     ShowResults();
                     Mayor();
                     if(Ended()!=null)
@@ -177,10 +177,12 @@ public class Server {
                     ForceSendAll("***Night***");
                     UnMuteMafia();
                     SendAll("You got only 40 seconds for chatting");
-                    CheckTime(40);
+                    Delay(40);
                     MuteAll();
                     MafiaVoting();
+                    SendAll("You got 30 seconds for helping godfather choose someone");
                     GodFather();
+                    Delay(30);
                     DrLecter();
                     CityDoctor();
                     Detective();
@@ -344,7 +346,7 @@ public class Server {
             Save(string,ut.getData().getUsername());
             if(!ut.getData().getRole().isCanChat())
             {
-                ut.Receive("You can't send messages cause you are muted or sleeping");
+                ut.Receive("You can't send messages");
             }
             else
             {
@@ -367,7 +369,10 @@ public class Server {
         }
         for (int i=0;i<Watchers.size();i++)
         {
-            Watchers.get(i).Receive(ut.getData().getUsername()+" : "+string);
+            if(!ut.equals(Watchers.get(i)))
+            {
+                Watchers.get(i).Receive(ut.getData().getUsername()+" : "+string);
+            }
         }
     }
     private synchronized void Save(String message,String sender)
@@ -1250,7 +1255,7 @@ public class Server {
         return PublicChatMode;
     }
 
-    private void CheckTime(int seconds)
+    private void Delay(int seconds)
     {
         Timer timer = new Timer();
         timer.schedule(new TimeCounter(),0,1000);

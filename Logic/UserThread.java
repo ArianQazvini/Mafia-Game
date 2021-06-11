@@ -85,11 +85,11 @@ public class UserThread extends Thread{
                 Thread.sleep(200);
                 if(message.equals("Exit"))
                 {
-                    out.writeUTF("Close");
-                    socket.close();
-                    in.close();
-                    out.close();
-                    server.RemoveThread(this,"Normal");
+//                    out.writeUTF("Close");
+//                    socket.close();
+//                    in.close();
+//                    out.close();
+//                    server.RemoveThread(this,"Normal");
                     break;
                 }
                 if(DeadMode)
@@ -450,11 +450,12 @@ public class UserThread extends Thread{
                 socket.close();
                 in.close();
                 out.close();
+                this.server.RemoveThread(this,"UnNormal");
             }catch (IOException ex)
             {
                 System.err.println("IOError - in socket Excp UT");
             }
-            this.server.RemoveThread(this,"UnNormal");
+
         }
         catch (IOException | InterruptedException e)
         {
