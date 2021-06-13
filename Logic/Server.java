@@ -6,18 +6,16 @@ import com.company.Mafias.Mafia;
 import com.company.Mafias.SimpleMafia;
 import com.company.PlayerData;
 import com.company.TimeCounter;
-
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 /**
- *
  * This class is the game's narrator
  * which controls game levels order and also accept players
  * and check their names
+ *
  * @author ArianQazvini
  * @version 1.0
  */
@@ -43,18 +41,46 @@ public class Server extends Thread {
 //    private boolean ProMode = false;
     private boolean DieHardMode = true;
     private File file;
+    /**
+     * The Reset.
+     */
     public  String RESET = "\u001B[0m";
+    /**
+     * The Black.
+     */
     public  String BLACK = "\u001B[30m";
+    /**
+     * The Red.
+     */
     public  String RED = "\u001B[31m";
+    /**
+     * The Green.
+     */
     public  String GREEN = "\u001B[32m";
+    /**
+     * The Yellow.
+     */
     public  String YELLOW = "\u001B[33m";
+    /**
+     * The Blue.
+     */
     public  String BLUE = "\u001B[34m";
+    /**
+     * The Purple.
+     */
     public  String PURPLE = "\u001B[35m";
+    /**
+     * The Cyan.
+     */
     public  String CYAN = "\u001B[36m";
+    /**
+     * The White.
+     */
     public  String WHITE = "\u001B[37m";
 
     /**
      * Server constructor
+     *
      * @param port server
      */
     public Server(int port)
@@ -74,6 +100,13 @@ public class Server extends Thread {
         }
 
     }
+
+    /**
+     * fill roles
+     * if number of players is more than 10 , it will generate simple_mafia or simple_Civilian
+     * @param number  number of players
+     *
+     * */
     private void CreateRoles(int number)
     {
         CityDoctor cityDoctor = new CityDoctor();
@@ -112,6 +145,11 @@ public class Server extends Thread {
             }
         }
     }
+
+    /**
+     *
+     * @return a random role from roles arraylist
+     */
     private Role RandomRoll()
     {
         Random random = new Random();
@@ -120,6 +158,11 @@ public class Server extends Thread {
         roles.remove(choice);
         return temp;
     }
+
+    /**
+     * Main method of server which accepts players at first
+     * then controls night and day mode (roles with action , votings ,chatroom,...)
+     */
     @Override
     public void run()
     {
@@ -168,14 +211,15 @@ public class Server extends Thread {
                 ForceSendAll(BLUE+"***Introduction Night finished***"+RESET);
                 while (true)
                 {
-                    ForceSendAll(YELLOW+"***Day Time***"+RESET);
+                    ForceSendAll(YELLOW+"***Day time***"+RESET);
                     this.PublicChatMode = true;
-                    ForceSendAll(RED+"You got only 60 seconds for chatting"+RESET);
-                    UnMuteAll(null);
+                    ForceSendAll(RED+"You have only 60 seconds for chatting"+RESET);
+                    UnMuteAll(this.PsychologistChoice);
                     Delay(60);
                     MuteAll();
                     this.PublicChatMode = false;
-                    ForceSendAll(PURPLE+"***Voting Time***"+RESET);
+                    ForceSendAll(PURPLE+"***Voting time***"+RESET);
+                    ForceSendAll(PURPLE+"***30 seconds for voting***"+RESET);
                     CreatePoll();
                     Voting();
                     Delay(31);
@@ -192,7 +236,7 @@ public class Server extends Thread {
                     }
                     ForceSendAll(BLUE+"***Night***"+RESET);
                     UnMuteMafia();
-                    SendAll("You got only 40 seconds for chatting");
+                    SendAll("You have only 40 seconds for chatting");
                     Delay(40);
                     MuteAll();
                     MafiaVoting();
@@ -223,7 +267,6 @@ public class Server extends Thread {
                     {
                         Thread.sleep(1500);
                     }
-                    UnMuteAll(this.PsychologistChoice);
                 }
                 Close();
                 //Voting();
@@ -235,6 +278,14 @@ public class Server extends Thread {
             System.err.println("Error about IO in serverside");
         }
     }
+
+    /**
+     * check if sent username from player is unique or not
+     *
+     * @param username player's name
+     * @param data     players data object
+     * @return true or false
+     */
     public synchronized boolean CheckUsername(String username,PlayerData data)
     {
          if(playersData.size()==0)
@@ -257,6 +308,12 @@ public class Server extends Thread {
              return true;
          }
     }
+
+    /**
+     * register a player thread in userthreads arraylist
+     *
+     * @param ut player's thread
+     */
     public void Register(UserThread ut)
     {
         for (int i=0;i<userThreads.size();i++)
@@ -269,6 +326,11 @@ public class Server extends Thread {
             }
         }
     }
+
+    /**
+     * Check if number of online players is equal to number of excepted players (which is given first when we run server)
+     * @return true or false
+     */
     private boolean EveryBodyRegistered()
     {
         int count = 0;
@@ -285,6 +347,11 @@ public class Server extends Thread {
         else
             return false;
     }
+
+    /**
+     *
+     * @return Allplayers at the start of the game
+     */
     private String AllPlayers()
     {
         StringBuilder stringBuilder = new StringBuilder();
@@ -296,6 +363,12 @@ public class Server extends Thread {
         }
         return stringBuilder.toString();
     }
+
+    /**
+     * if all players are ready , we will send them all players' username
+     *
+     * @return a string
+     */
     public String GetAllplayers()
     {
         if(joinigFinished)
@@ -303,10 +376,19 @@ public class Server extends Thread {
         else
             return null;
     }
+
+    /**
+     * whenever a player says he/she is ready , a counter must be increased
+     */
     public synchronized void Ready()
     {
         ready++;
     }
+
+    /**
+     * ask each player if they are ready or not (at start of the game)
+     * @param num index of player's thread in arraylist
+     */
     private void ThreadsAskready(int num)
     {
         Thread thread = new Thread(new Runnable() {
@@ -317,6 +399,11 @@ public class Server extends Thread {
             });
         thread.start();
     }
+
+    /**
+     * ask each player if they are ready or not (at start of the game)
+     * create a new thread for each player
+     */
     private void AskReady()
     {
         for (int i=0;i<userThreads.size();i++)
@@ -324,6 +411,12 @@ public class Server extends Thread {
             ThreadsAskready(i);
         }
     }
+
+    /**
+     * if all players are ready , game will start
+     *
+     * @return true or false
+     */
     public boolean CanStartGame()
     {
         if(ready==userThreads.size())
@@ -331,6 +424,14 @@ public class Server extends Thread {
         else
             return false;
     }
+
+    /**
+     * Send all a message
+     * if public chat mode is on, it will save the message to a file
+     *
+     * @param string message
+     * @param ut     sender
+     */
     public synchronized void SendAll(String string,UserThread ut)
     {
         if(!PublicChatMode)
@@ -392,6 +493,12 @@ public class Server extends Thread {
             }
         }
     }
+
+    /**
+     * save messages in a file
+     * @param message message
+     * @param sender sender
+     */
     private synchronized void Save(String message,String sender)
     {
           this.file = new File("Messages.txt");
@@ -402,6 +509,12 @@ public class Server extends Thread {
             System.err.println("File not found");
         }
     }
+
+    /**
+     * if player enters 'History', all previous messages will be shown
+     *
+     * @return a string
+     */
     public String LoadAll()
     {
         StringBuilder stringBuilder = new StringBuilder();
@@ -420,6 +533,10 @@ public class Server extends Thread {
         }
         return stringBuilder.toString();
     }
+
+    /**
+     * Mafia must know each other
+     */
     private void MafiaIntroduce()
     {
         StringBuilder stringBuilder = new StringBuilder();
@@ -438,6 +555,10 @@ public class Server extends Thread {
             }
         }
     }
+
+    /**
+     *  Mayor must know who the CityDoctor is
+     */
     private void MayortoDrIntroduce()
     {
         String doctor = null;
@@ -458,6 +579,11 @@ public class Server extends Thread {
             }
         }
     }
+
+    /**
+     * Send all a message (also check if player can chat or not)
+     * @param msg message
+     */
     private synchronized void SendAll(String msg)
     {
             for (int i=0;i<userThreads.size();i++)
@@ -473,6 +599,11 @@ public class Server extends Thread {
         }
 
     }
+
+    /**
+     * send all a message (without checking player canChat mode )
+     * @param msg message
+     */
     private synchronized void ForceSendAll(String msg)
     {
         for (int i=0;i<userThreads.size();i++)
@@ -484,6 +615,12 @@ public class Server extends Thread {
             Watchers.get(i).Receive(msg);
         }
     }
+
+    /**
+     * Send all a message except a specified player
+     * @param msg message
+     * @param except specified player
+     */
     private synchronized void ForceSendAll(String msg , UserThread except)
     {
         for (int i=0;i<userThreads.size();i++)
@@ -498,6 +635,12 @@ public class Server extends Thread {
             Watchers.get(i).Receive(msg);
         }
     }
+
+    /**
+     * Send a message
+     * @param msg message
+     * @param sender sender
+     */
     private synchronized void SendMafia(String msg,UserThread sender)
     {
         for (int i=0;i<userThreads.size();i++)
@@ -509,9 +652,16 @@ public class Server extends Thread {
         }
         for (int i=0;i<Watchers.size();i++)
         {
-            Watchers.get(i).Receive(msg);
+            Watchers.get(i).Receive(BLUE+msg+RESET);
         }
     }
+
+    /**
+     * Get a player by it's name
+     *
+     * @param name name
+     * @return player user thread
+     */
     public UserThread GetPlayer(String name)
     {
         for (int i=0;i<userThreads.size();i++)
@@ -523,6 +673,10 @@ public class Server extends Thread {
         }
         return null;
     }
+
+    /**
+     * Godfather action
+     */
     private void GodFather()
     {
         if(Contains(Position.GODFATHER))
@@ -549,6 +703,7 @@ public class Server extends Thread {
                         temp.action(help);
                     }
                     userThreads.get(i).Receive("Done");
+                    userThreads.get(i).setChoosenPlayer(null);
                     break;
                 }
             }
@@ -556,9 +711,12 @@ public class Server extends Thread {
         else
         {
         }
-
-
     }
+
+    /**
+     *
+     * @return list of all alive mafias
+     */
     private String AliveMafia()
     {
         StringBuilder stringBuilder = new StringBuilder();
@@ -572,6 +730,10 @@ public class Server extends Thread {
         }
         return stringBuilder.toString();
     }
+
+    /**
+     * DrLecter action
+     */
     private void DrLecter()
     {
         if(Contains(Position.LECTER))
@@ -598,6 +760,7 @@ public class Server extends Thread {
                         temp.action(help);
                     }
                     userThreads.get(i).Receive("Done");
+                    userThreads.get(i).setChoosenPlayer(null);
                     break;
                 }
             }
@@ -606,6 +769,10 @@ public class Server extends Thread {
         {
         }
     }
+
+    /**
+     * CityDoctor action
+     */
     private void CityDoctor()
     {
         if(Contains(Position.CITYDOCTOR))
@@ -632,6 +799,7 @@ public class Server extends Thread {
                         temp.action(help);
                     }
                     userThreads.get(i).Receive("Done");
+                    userThreads.get(i).setChoosenPlayer(null);
                     break;
                 }
             }
@@ -640,6 +808,10 @@ public class Server extends Thread {
         {
         }
     }
+
+    /**
+     * Detective action
+     */
     private void Detective() {
         if (Contains(Position.DETECTIVE)) {
             for (int i = 0; i < userThreads.size(); i++) {
@@ -660,6 +832,7 @@ public class Server extends Thread {
                         userThreads.get(i).Receive(temp.action(help));
                     }
                     userThreads.get(i).Receive("Done");
+                    userThreads.get(i).setChoosenPlayer(null);
                     break;
                 }
             }
@@ -667,6 +840,10 @@ public class Server extends Thread {
         }
 
     }
+
+    /**
+     * Professional action
+     */
     private void Professional()
     {
         if(Contains(Position.PROFESSIONAL))
@@ -693,6 +870,10 @@ public class Server extends Thread {
         {
         }
     }
+
+    /**
+     * Psychologist action
+     */
     private void Psychologist()
     {
         if(Contains(Position.PSYCHOLOGIST))
@@ -719,6 +900,10 @@ public class Server extends Thread {
         {
         }
     }
+
+    /**
+     * Diehard action
+     */
     private void DieHard()
     {
         if(Contains(Position.DIEHARD))
@@ -745,6 +930,12 @@ public class Server extends Thread {
         }
 
     }
+
+    /**
+     * mafias (except godfather) can have a simple voting to help godfather
+     * choose someone to shoot
+     * @param index mafia's thread's index
+     */
     private void MafiaVotingThread(int index)
     {
         Thread thread = new Thread(new Runnable() {
@@ -763,13 +954,18 @@ public class Server extends Thread {
                 }
                 userThreads.get(index).Receive("Done");
                 SendMafia(userThreads.get(index).getData().getUsername()+" vote is: "+userThreads.get(index).MafiaVote(),userThreads.get(index));
+                userThreads.get(index).setMafiaVote(null);
             }
         });
         thread.start();
     }
+
+    /**
+     * Create a voting thread for each mafia (except godfather)
+     */
     private void MafiaVoting()
     {
-        if(Contains(Position.GODFATHER))
+        if(Contains(Position.GODFATHER) && (Contains(Position.LECTER) || Contains(Position.SIMPLE_MAFIA)))
         {
             for (int i=0;i<userThreads.size();i++)
             {
@@ -783,6 +979,10 @@ public class Server extends Thread {
         {
         }
     }
+
+    /**
+     * update dead players and remove them from all players arraylist
+     */
     private void UpdateDead()
     {
         for (int i=0;i<userThreads.size();i++)
@@ -810,6 +1010,11 @@ public class Server extends Thread {
               }
           }
     }
+
+    /**
+     * if a player is dead , he can either choose to watch rest of the game or leave completely
+     * @param ut
+     */
     private void WatchRequest(UserThread ut)
     {
         Thread thread = new Thread(new Runnable() {
@@ -834,10 +1039,19 @@ public class Server extends Thread {
         });
         thread.start();
     }
+
+    /**
+     * if dead player completed it's watch request a counter must be increased
+     */
     public synchronized void WatchRequestCompleted()
     {
         this.WatchRequests++;
     }
+
+    /**
+     * if all players complete their watch request , it will return true
+     * @return true or fasle
+     */
     private boolean canResume()
     {
         if(WatchRequests == NowDead)
@@ -851,6 +1065,10 @@ public class Server extends Thread {
             return false;
         }
     }
+
+    /**
+     * Create a hashmap for voting
+     */
     private void CreatePoll()
     {
         if(poll==null)
@@ -873,10 +1091,21 @@ public class Server extends Thread {
         }
 
     }
+
+    /**
+     * Register player's vote(Day mode)
+     * @param vote vote
+     * @param ut voter
+     */
     private synchronized void VoteRegister(String vote, UserThread ut)
     {
         poll.get(vote).add(ut);
     }
+
+    /**
+     *
+     * @return all players with maximum votes
+     */
     private HashMap<String ,Integer> Results()
     {
           HashMap<String,Integer> res = new HashMap<>();
@@ -897,6 +1126,10 @@ public class Server extends Thread {
           }
           return res;
     }
+
+    /**
+     * Send voting result for all players
+     */
     private void ShowResults()
     {
         Set<String> keyset = Results().keySet();
@@ -907,6 +1140,10 @@ public class Server extends Thread {
             ForceSendAll(keytemp.get(i)+" "+ Results().get(keytemp.get(i)));
         }
     }
+
+    /**
+     * kill the player with the most votes after the voting
+     */
     private void VotingKill()
     {
         Set<String> keyset = Results().keySet();
@@ -939,6 +1176,11 @@ public class Server extends Thread {
             }
         }
     }
+
+    /**
+     * voting thread for each player
+     * @param index index of thread
+     */
     private void VotingThread(int index)
     {
         Thread thread = new Thread(new Runnable() {
@@ -946,6 +1188,7 @@ public class Server extends Thread {
             public void run() {
                userThreads.get(index).setVotingMode(true);
                userThreads.get(index).Receive("What's your vote?");
+               userThreads.get(index).Receive(GetAllplayers());
                if(userThreads.get(index).poll()==null)
                {
                    try {
@@ -965,11 +1208,16 @@ public class Server extends Thread {
                    VoteRegister(userThreads.get(index).poll(),userThreads.get(index));
                    userThreads.get(index).setVotingMode(false);
                    ForceSendAll(userThreads.get(index).getData().getUsername()+" vote is : "+userThreads.get(index).poll());
+                   userThreads.get(index).setPoll(null);
                }
             }
         });
         thread.start();
     }
+
+    /**
+     * create a voting thread for each player
+     */
     private void Voting()
     {
        for (int i=0;i<userThreads.size();i++)
@@ -977,6 +1225,10 @@ public class Server extends Thread {
            VotingThread(i);
        }
     }
+
+    /**
+     * mayor action
+     */
     private void Mayor()
     {
         if(Contains(Position.MAYOR))
@@ -1004,6 +1256,7 @@ public class Server extends Thread {
                         VotingKill();
                         UpdateDead();
                     }
+                    userThreads.get(i).setMayorDecision(null);
                     break;
                 }
             }
@@ -1015,6 +1268,10 @@ public class Server extends Thread {
         }
 
     }
+
+    /**
+     * declaring dead people after night mode
+     */
     private void NightState()
     {
         StringBuilder dead = new StringBuilder();
@@ -1036,6 +1293,10 @@ public class Server extends Thread {
             ForceSendAll(dead.toString() + " will leave us");
         }
     }
+
+    /**
+     * if diehard uses it's action , we will send  dead players roles for all players
+     */
     private void announcement()
     {
         if(anouncement){
@@ -1051,30 +1312,34 @@ public class Server extends Thread {
         {
         }
     }
-    public void Mute(String name,int sleep)
-    {
-        for (int i=0;i<userThreads.size();i++)
-        {
-            if(userThreads.get(i).getData().getUsername().equals(name))
-            {
-                userThreads.get(i).Receive("You are Muted");
-                userThreads.get(i).getData().getRole().setCanChat(false);
-                userThreads.get(i).setSleep(sleep);
-            }
-        }
-    }
-    public void UnMute(String name)
-    {
-        for (int i=0;i<userThreads.size();i++)
-        {
-            if(userThreads.get(i).getData().getUsername().equals(name))
-            {
-                userThreads.get(i).getData().getRole().setCanChat(true);
-                userThreads.get(i).setSleep(0);
+//    public void Mute(String name,int sleep)
+//    {
+//        for (int i=0;i<userThreads.size();i++)
+//        {
+//            if(userThreads.get(i).getData().getUsername().equals(name))
+//            {
+//                userThreads.get(i).Receive("You are Muted");
+//                userThreads.get(i).getData().getRole().setCanChat(false);
+//                userThreads.get(i).setSleep(sleep);
+//            }
+//        }
+//    }
+//    public void UnMute(String name)
+//    {
+//        for (int i=0;i<userThreads.size();i++)
+//        {
+//            if(userThreads.get(i).getData().getUsername().equals(name))
+//            {
+//                userThreads.get(i).getData().getRole().setCanChat(true);
+//                userThreads.get(i).setSleep(0);
+//
+//            }
+//        }
+//    }
 
-            }
-        }
-    }
+    /**
+     * Mute all players
+     */
     public void MuteAll()
     {
         for (int i=0;i<userThreads.size();i++)
@@ -1082,6 +1347,11 @@ public class Server extends Thread {
             userThreads.get(i).getData().getRole().setCanChat(false);
         }
     }
+
+    /**
+     * unmute all players except a specified player
+     * @param except specified player
+     */
     private void UnMuteAll(UserThread except)
     {
         if(except==null)
@@ -1106,6 +1376,10 @@ public class Server extends Thread {
         }
 
     }
+
+    /**
+     * un mute mafia players
+     */
     private void UnMuteMafia()
     {
         for (int i=0;i<userThreads.size();i++)
@@ -1116,6 +1390,13 @@ public class Server extends Thread {
             }
         }
     }
+
+    /**
+     * remove a thread from allthreads list
+     *
+     * @param thread thread
+     * @param mode   if player himself wants to remove it's thread then it is normal mode             else -> un normal mode
+     */
     public synchronized void RemoveThread(UserThread thread,String mode)
     {
         if(mode.equals("Normal"))
@@ -1129,6 +1410,7 @@ public class Server extends Thread {
                 if(temp.equals(thread))
                 {
                     name = temp.getData().getUsername();
+                    ForceSendAll(name+" disconnected");
                     System.out.println(name+" disconnected");
                     it.remove();
                     break;
@@ -1157,6 +1439,7 @@ public class Server extends Thread {
                 if(temp.equals(thread))
                 {
                     name = temp.getData().getUsername();
+                    ForceSendAll(name+" disconnected");
                     System.out.println(name+" disconnected");
                     it.remove();
                     break;
@@ -1175,27 +1458,74 @@ public class Server extends Thread {
         }
 
     }
+
+    /**
+     * set diehardPermission
+     *
+     * @param diehardPermission diehardPermission
+     */
     public void setDiehardPermission(boolean diehardPermission) {
         DiehardPermission = diehardPermission;
     }
+
+    /**
+     * getter for diehardPermission
+     *
+     * @return true or false
+     */
     public boolean isDiehardPermission() {
         return DiehardPermission;
     }
+
+    /**
+     * setter for joinigFinished
+     *
+     * @param joinigFinished true or false
+     */
     public void setJoinigFinished(boolean joinigFinished) {
         this.joinigFinished = joinigFinished;
     }
+
+    /**
+     * Is joinig finished boolean.
+     *
+     * @return true or false
+     */
     public boolean isJoinigFinished() {
         return joinigFinished;
     }
+
+    /**
+     * Is public chat mode boolean.
+     *
+     * @return the boolean
+     */
     public boolean isPublicChatMode() {
         return PublicChatMode;
     }
+
+    /**
+     * Sets anouncement.
+     *
+     * @param anouncement the anouncement
+     */
     public void setAnouncement(boolean anouncement) {
         this.anouncement = anouncement;
     }
+
+    /**
+     * Sets die hard mode.
+     *
+     * @param dieHardMode the die hard mode
+     */
     public void setDieHardMode(boolean dieHardMode) {
         DieHardMode = dieHardMode;
     }
+
+    /**
+     * set server's thread on sleep
+     * @param seconds sleeping seconds
+     */
     private void Delay(int seconds)
     {
         Timer timer = new Timer();
@@ -1207,6 +1537,12 @@ public class Server extends Thread {
         }
         timer.cancel();
     }
+
+    /**
+     * check if a character is still alive or not
+     * @param p given character
+     * @return true or false
+     */
     private boolean Contains(Position p)
     {
         for (int i=0;i<userThreads.size();i++)
@@ -1218,6 +1554,11 @@ public class Server extends Thread {
         }
         return false;
     }
+
+    /**
+     *
+     * @return the winner
+     */
     private String Ended()
     {
         int countMafia=0;
@@ -1246,6 +1587,10 @@ public class Server extends Thread {
             return null;
         }
     }
+
+    /**
+     * close the game
+     */
     private void Close()
     {
         Iterator<UserThread> it = userThreads.iterator();

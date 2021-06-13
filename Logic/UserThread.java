@@ -105,6 +105,7 @@ public class UserThread extends Thread{
 //                    in.close();
 //                    out.close();
 //                    server.RemoveThread(this,"Normal");
+
                     break;
                 }
                 if(DeadMode)
@@ -328,7 +329,6 @@ public class UserThread extends Thread{
                     {
                         if(message.equals("YES"))
                         {
-                            this.poll="YES";
                             out.writeUTF("Choose the player you want to kill");
                             out.writeUTF(this.server.GetAllplayers());
                             message= in.readUTF();
@@ -344,7 +344,6 @@ public class UserThread extends Thread{
                                     out.writeUTF("You choosed yourself!");
                                 }
                                 else {
-                                    choosenPlayer=message;
                                     Professional temp =(Professional) this.getData().getRole();
                                     temp.action(this.server.GetPlayer(message));
                                     validity=true;
@@ -361,7 +360,6 @@ public class UserThread extends Thread{
                         }
                         else
                         {
-                            this.poll="NO";
                             ChoosePlayerMode=false;
                         }
                     }
@@ -369,7 +367,6 @@ public class UserThread extends Thread{
                     {
                         if(message.equals("YES"))
                         {
-                            this.poll = "YES";
                             out.writeUTF("Choose the player you want to mute");
                             out.writeUTF(this.server.GetAllplayers());
                             message= in.readUTF();
@@ -385,7 +382,6 @@ public class UserThread extends Thread{
                                     out.writeUTF("You choosed yourself!");
                                 }
                                 else {
-                                    choosenPlayer=message;
                                     Psychologist temp = (Psychologist) this.getData().getRole();
                                     temp.action(server.GetPlayer(message));
                                     validity=true;
@@ -402,7 +398,6 @@ public class UserThread extends Thread{
                         }
                         else
                         {
-                            this.poll="NO";
                             ChoosePlayerMode=false;
                         }
 
@@ -423,7 +418,6 @@ public class UserThread extends Thread{
                             }
                             else
                             {
-                                this.poll="NO";
                                 out.writeUTF("Done");
                                 ChoosePlayerMode = false;
                             }
@@ -588,6 +582,9 @@ public class UserThread extends Thread{
     public void setChoosePlayerMode(boolean choosePlayerMode) {
         ChoosePlayerMode = choosePlayerMode;
     }
+    public void setChoosenPlayer(String choosenPlayer) {
+        this.choosenPlayer = choosenPlayer;
+    }
     public boolean isChoosePlayerMode() {
         return ChoosePlayerMode;
     }
@@ -611,11 +608,29 @@ public class UserThread extends Thread{
     public void setDeadMode(boolean deadMode) {
         DeadMode = deadMode;
     }
+
+    public void setPoll(String poll) {
+        this.poll = poll;
+    }
+
+    public void setMafiaVote(String mafiaVote) {
+        MafiaVote = mafiaVote;
+    }
+
+    public void setVote(String vote) {
+        Vote = vote;
+    }
+    public void setMayorDecision(String mayorDecision) {
+        MayorDecision = mayorDecision;
+    }
+
     public void Disconnect()
     {
         try {
-            this.out.writeUTF("Close");
+            out.writeUTF("Close");
             socket.close();
+            in.close();
+            out.close();
             server.RemoveThread(this,"Normal");
         } catch (IOException exception) {
             System.err.println("Error while disconnecting in userthread");
