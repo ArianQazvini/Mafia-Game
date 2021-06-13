@@ -19,8 +19,7 @@ public class Professional extends Civilian implements Action {
         }
         else
         {
-            this.setGotShot(true);
-            this.setAlive(false);
+            this.Shooted();
         }
     }
 }

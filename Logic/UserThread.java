@@ -1,12 +1,11 @@
 package com.company.Logic;
 
-import com.company.Civilians.CityDoctor;
-import com.company.Civilians.Civilian;
-import com.company.Civilians.DieHard;
+import com.company.Civilians.*;
 import com.company.Mafias.Lecter;
 import com.company.Mafias.Mafia;
 import com.company.PlayerData;
 
+import javax.swing.plaf.RootPaneUI;
 import java.beans.beancontext.BeanContextServiceRevokedEvent;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -34,6 +33,15 @@ public class UserThread extends Thread{
     private String poll= null;
     private String MayorDecision=null;
     private String Watch = null;
+    public  String RESET = "\u001B[0m";
+    public  String BLACK = "\u001B[30m";
+    public  String RED = "\u001B[31m";
+    public  String GREEN = "\u001B[32m";
+    public  String YELLOW = "\u001B[33m";
+    public  String BLUE = "\u001B[34m";
+    public  String PURPLE = "\u001B[35m";
+    public  String CYAN = "\u001B[36m";
+    public  String WHITE = "\u001B[37m";
     public UserThread(Socket socket,Server server)
     {
         this.socket = socket;
@@ -57,7 +65,14 @@ public class UserThread extends Thread{
                   }
                   out.writeUTF("Username registered");
 //                  Thread.sleep(500);
-                  out.writeUTF("Your role is "+data.getRole().getCharacter());
+                if(data.getRole() instanceof Mafia)
+                {
+                    out.writeUTF("Your role is "+RED+data.getRole().getCharacter()+RESET);
+                }
+                else
+                {
+                    out.writeUTF("Your role is "+GREEN+data.getRole().getCharacter()+RESET);
+                }
                   this.server.Register(this);
                   out.writeUTF("---------------------");
                   Thread.sleep(500);
@@ -82,7 +97,7 @@ public class UserThread extends Thread{
             {
 
                 String message = in.readUTF();
-                Thread.sleep(200);
+                Thread.sleep(100);
                 if(message.equals("Exit"))
                 {
 //                    out.writeUTF("Close");
@@ -114,9 +129,9 @@ public class UserThread extends Thread{
                 }
                 else if(VotingMode)
                 {
-                    boolean validity = false;
-                    while (!validity)
-                    {
+                 //   boolean validity = false;
+                  //  while (!validity)
+                 //   {
                         if(this.server.GetPlayer(message)==null)
                         {
                             out.writeUTF("Player is not in list");
@@ -125,28 +140,31 @@ public class UserThread extends Thread{
                         {
                             out.writeUTF("Can't vote to your self");
                         }
-                        else
-                        {
-                            out.writeUTF("Done");
+                        else {
+                            if (poll == null) {
+                                out.writeUTF("Done");
+                            } else {
+                                out.writeUTF("Your vote changed from " + poll + " to " + message);
+                            }
                             poll = message;
-                            VotingMode = false;
-                            validity = true;
-                        }
-                        if(validity)
-                        {
-                        }
-                        else
-                        {
-                            Thread.sleep(500);
-                            if(!VotingMode)
-                            {
-                                validity=true;
-                            }
-                            else
-                            {
-                                message = in.readUTF();
-                            }
-                        }
+                            //   VotingMode = false;
+                            //      validity = true;
+                            //  }
+//                        if(validity)
+//                        {
+//                        }
+//                        else
+//                        {
+//                            Thread.sleep(500);
+//                            if(!VotingMode)
+//                            {
+//                                validity=true;
+//                            }
+//                            else
+//                            {
+//                                message = in.readUTF();
+//                            }
+//                        }
                     }
                 }
                 else if(MafiaVotingMode)
@@ -312,6 +330,7 @@ public class UserThread extends Thread{
                         {
                             this.poll="YES";
                             out.writeUTF("Choose the player you want to kill");
+                            out.writeUTF(this.server.GetAllplayers());
                             message= in.readUTF();
                             boolean validity = false;
                             while (!validity)
@@ -326,8 +345,11 @@ public class UserThread extends Thread{
                                 }
                                 else {
                                     choosenPlayer=message;
-                                    ChoosePlayerMode = false;
+                                    Professional temp =(Professional) this.getData().getRole();
+                                    temp.action(this.server.GetPlayer(message));
                                     validity=true;
+                                    out.writeUTF("Done");
+                                    ChoosePlayerMode = false;
                                 }
                                 if(validity)
                                 {
@@ -349,6 +371,7 @@ public class UserThread extends Thread{
                         {
                             this.poll = "YES";
                             out.writeUTF("Choose the player you want to mute");
+                            out.writeUTF(this.server.GetAllplayers());
                             message= in.readUTF();
                             boolean validity = false;
                             while (!validity)
@@ -363,8 +386,11 @@ public class UserThread extends Thread{
                                 }
                                 else {
                                     choosenPlayer=message;
-                                    ChoosePlayerMode = false;
+                                    Psychologist temp = (Psychologist) this.getData().getRole();
+                                    temp.action(server.GetPlayer(message));
                                     validity=true;
+                                    out.writeUTF("Done");
+                                    ChoosePlayerMode = false;
                                 }
                                 if(validity)
                                 {
@@ -383,16 +409,29 @@ public class UserThread extends Thread{
                     }
                     else if(this.getData().getRole().getCharacter().equals(Position.DIEHARD))
                     {
-                        if(message.equals("YES"))
+                        DieHard temp = (DieHard) this.getData().getRole();
+                        if(temp.getAnounceCount()<2)
                         {
-                            this.poll = "YES";
-                            this.server.setDiehardPermission(true);
-                            ChoosePlayerMode = false;
+                            if(message.equals("YES"))
+                            {
+                                this.server.setDiehardPermission(true);
+                                temp.AnounceRequest();
+                                this.server.setAnouncement(true);
+                                out.writeUTF("Done");
+                                this.server.setDieHardMode(false);
+                                ChoosePlayerMode = false;
+                            }
+                            else
+                            {
+                                this.poll="NO";
+                                out.writeUTF("Done");
+                                ChoosePlayerMode = false;
+                            }
                         }
                         else
                         {
-                            this.poll="NO";
-                            ChoosePlayerMode=false;
+                            out.writeUTF("You can't use your ability");
+                            ChoosePlayerMode = false;
                         }
                     }
                     if(message.equals("Exit"))
@@ -479,7 +518,7 @@ public class UserThread extends Thread{
 
         }
     }
-    public void Receive(String str)
+    public synchronized void Receive(String str)
     {
         try {
             this.out.writeUTF(str);
@@ -507,15 +546,15 @@ public class UserThread extends Thread{
         }
 
     }
-    public String ChoosePlayer()
+    public synchronized String ChoosePlayer()
     {
             return choosenPlayer;
     }
-    public String MafiaVote()
+    public synchronized String MafiaVote()
     {
         return this.MafiaVote;
     }
-    public String poll()
+    public synchronized String poll()
     {
         return poll;
     }
@@ -523,7 +562,7 @@ public class UserThread extends Thread{
     {
         return Watch;
     }
-    public String MayorDecision()
+    public synchronized String MayorDecision()
     {
         return this.MayorDecision;
     }
@@ -569,7 +608,6 @@ public class UserThread extends Thread{
     public void setMayorMode(boolean mayorMode) {
         MayorMode = mayorMode;
     }
-
     public void setDeadMode(boolean deadMode) {
         DeadMode = deadMode;
     }
