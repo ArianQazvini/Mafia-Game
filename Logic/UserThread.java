@@ -1,18 +1,20 @@
 package com.company.Logic;
-
 import com.company.Civilians.*;
+import com.company.Mafias.GodFather;
 import com.company.Mafias.Lecter;
 import com.company.Mafias.Mafia;
 import com.company.PlayerData;
-
-import javax.swing.plaf.RootPaneUI;
-import java.beans.beancontext.BeanContextServiceRevokedEvent;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketException;
 
+/**
+ * This class is the joint point between players
+ * and Server which receives messages from players
+ * and send back messages
+ */
 public class UserThread extends Thread{
     private PlayerData data;
     private Socket socket;
@@ -27,27 +29,70 @@ public class UserThread extends Thread{
     private boolean MafiaVotingMode = false;
     private boolean MayorMode  = false;
     private boolean DeadMode = false;
+    private boolean ExitMode = false;
     private String  choosenPlayer = null;
     private String MafiaVote = null;
     private String Vote = null;
     private String poll= null;
     private String MayorDecision=null;
     private String Watch = null;
+    /**
+     * The Reset.
+     */
     public  String RESET = "\u001B[0m";
+    /**
+     * The Black.
+     */
     public  String BLACK = "\u001B[30m";
-    public  String RED = "\u001B[31m";
+    /**
+     * The Red.
+     */
+    public String RED = "\u001B[31m";
+    /**
+     * The Green.
+     */
     public  String GREEN = "\u001B[32m";
+    /**
+     * The Yellow.
+     */
     public  String YELLOW = "\u001B[33m";
+    /**
+     * The Blue.
+     */
     public  String BLUE = "\u001B[34m";
+    /**
+     * The Purple.
+     */
     public  String PURPLE = "\u001B[35m";
+    /**
+     * The Cyan.
+     */
     public  String CYAN = "\u001B[36m";
+    /**
+     * The White.
+     */
     public  String WHITE = "\u001B[37m";
+
+    /**
+     * Constructor
+     * Instantiates a new User thread.
+     *
+     * @param socket client's socket
+     * @param server  server
+     */
     public UserThread(Socket socket,Server server)
     {
         this.socket = socket;
         this.server=server;
         this.data = new PlayerData();
     }
+
+    /**
+     * Main method of this class
+     * at first it checks player's username validity
+     *then if player is ready ,thread will execute the while(true) loop in which
+     * it control voting , night actions, ... modes
+     */
     @Override
     public void run()
     {
@@ -87,12 +132,7 @@ public class UserThread extends Thread{
                 if(canStartGame)
                     break;
             }
-//            while (!data.getRole().isCanChat())
-//            {
-//                Thread.sleep(500);
-//                if(data.getRole().isCanChat())
-//                    break;
-//            }
+            //main loop is here
             while (true)
             {
 
@@ -100,12 +140,14 @@ public class UserThread extends Thread{
                 Thread.sleep(100);
                 if(message.equals("Exit"))
                 {
-//                    out.writeUTF("Close");
-//                    socket.close();
-//                    in.close();
-//                    out.close();
-//                    server.RemoveThread(this,"Normal");
-
+                    if(MayorMode)
+                    {
+                        setMayorDecision("NO");
+                    }
+                    else if(ChoosePlayerMode)
+                    {
+                        ChoosePlayerMode =false;
+                    }
                     break;
                 }
                 if(DeadMode)
@@ -121,18 +163,10 @@ public class UserThread extends Thread{
                         this.Watch="NO";
                         this.server.WatchRequestCompleted();
                         break;
-//                        out.writeUTF("Close");
-//                        socket.close();
-//                        in.close();
-//                        out.close();
-//                        server.RemoveThread(this,"Normal");
                     }
                 }
                 else if(VotingMode)
                 {
-                 //   boolean validity = false;
-                  //  while (!validity)
-                 //   {
                         if(this.server.GetPlayer(message)==null)
                         {
                             out.writeUTF("Player is not in list");
@@ -148,24 +182,6 @@ public class UserThread extends Thread{
                                 out.writeUTF("Your vote changed from " + poll + " to " + message);
                             }
                             poll = message;
-                            //   VotingMode = false;
-                            //      validity = true;
-                            //  }
-//                        if(validity)
-//                        {
-//                        }
-//                        else
-//                        {
-//                            Thread.sleep(500);
-//                            if(!VotingMode)
-//                            {
-//                                validity=true;
-//                            }
-//                            else
-//                            {
-//                                message = in.readUTF();
-//                            }
-//                        }
                     }
                 }
                 else if(MafiaVotingMode)
@@ -213,15 +229,23 @@ public class UserThread extends Thread{
                             }
                             else
                             {
-                                choosenPlayer=message;
-                                ChoosePlayerMode = false;
+                                GodFather temp = (GodFather) this.getData().getRole();
+                                temp.action(this.server.GetPlayer(message));
                                 validity=true;
+                                out.writeUTF("Done");
+                                ChoosePlayerMode = false;
                             }
                             if(validity)
                             {
                             }
                             else {
                                 message=in.readUTF();
+                                if(message.equals("Exit"))
+                                {
+                                    ExitMode = true;
+                                    ChoosePlayerMode=false;
+                                    break;
+                                }
                             }
                         }
                     }
@@ -238,65 +262,99 @@ public class UserThread extends Thread{
                             {
                                 out.writeUTF("Choose from mafias");
                             }
+                            else if (this.server.GetPlayer(message).getData().getRole().getCharacter().equals(Position.LECTER))
+                            {
+                                Lecter temp = (Lecter) this.data.getRole();
+                                if(temp.getSelfHeal()==0)
+                                {
+                                    temp.SelfHeal();
+                                    validity= true;
+                                    out.writeUTF("Done");
+                                    ChoosePlayerMode=false;
+                                }
+                                else
+                                {
+                                    out.writeUTF("You have healed yourself once before-Choose someone else");
+                                }
+                            }
                             else
                             {
-                                if(this.server.GetPlayer(message).getData().getRole().getCharacter().equals(Position.LECTER))
-                                {
-                                    Lecter temp = (Lecter) this.data.getRole();
-                                    if(temp.getSelfHeal()==0)
-                                    {
-                                        temp.SelfHeal();
-                                    }
-                                    else
-                                    {
-                                        out.writeUTF("You have healed yourself once before-Choose someone else");
-                                        message = in.readUTF();
-                                        while (this.server.GetPlayer(message).getData().getRole().getCharacter().equals(Position.LECTER))
-                                        {
-                                            out.writeUTF("You have healed yourself once before-Choose someone else");
-                                            message = in.readUTF();
-                                        }
-                                    }
-                                }
-                                choosenPlayer=message;
-                                ChoosePlayerMode = false;
+                                Lecter temp = (Lecter) this.data.getRole();
+                                temp.action(this.server.GetPlayer(message));
                                 validity=true;
+                                out.writeUTF("Done");
+                                ChoosePlayerMode =false;
                             }
                             if(validity)
                             {
                             }
                             else {
                                 message=in.readUTF();
+                                if(message.equals("Exit"))
+                                {
+                                    ExitMode = true;
+                                    ChoosePlayerMode=false;
+                                    break;
+                                }
                             }
                         }
                     }
                     else if (this.getData().getRole().getCharacter().equals(Position.CITYDOCTOR))
                     {
+                        boolean validity = false;
+                        while (!validity)
+                        {
+                            if(this.server.GetPlayer(message)==null)
+                            {
+                                out.writeUTF("Not valid player");
+                            }
+                            else if (this.server.GetPlayer(message).getData().getRole().getCharacter().equals(Position.CITYDOCTOR))
+                            {
+                                CityDoctor temp = (CityDoctor) this.getData().getRole();
+                                if(temp.getSelfHeal()==0)
+                                {
+                                    temp.SelfHeal();
+                                    out.writeUTF("Done");
+                                    validity=true;
+                                    ChoosePlayerMode=false;
+                                }
+                                else
+                                {
+                                    out.writeUTF("You have healed yourself once before-Choose someone else");
+                                }
+                            }
+                            else
+                            {
+                                CityDoctor temp = (CityDoctor) this.getData().getRole();
+                                temp.action(this.server.GetPlayer(message));
+                                out.writeUTF("Done");
+                                validity=true;
+                                ChoosePlayerMode=false;
+                            }
+                            if(validity)
+                            {
+                            }
+                            else
+                            {
+                                message=in.readUTF();
+                                if(message.equals("Exit"))
+                                {
+                                    ExitMode = true;
+                                    ChoosePlayerMode=false;
+                                    break;
+                                }
+                            }
+                        }
                         while (this.server.GetPlayer(message)==null)
                         {
                             out.writeUTF("Not valid player");
                             message = in.readUTF();
-                        }
-                        if(this.server.GetPlayer(message).getData().getRole().getCharacter().equals(Position.CITYDOCTOR))
-                        {
-                            CityDoctor temp = (CityDoctor) this.data.getRole();
-                            if(temp.getSelfHeal()==0)
+                            if(message.equals("Exit"))
                             {
-                                temp.SelfHeal();
-                            }
-                            else
-                            {
-                                out.writeUTF("You have healed yourself once before-Choose someone else");
-                                message = in.readUTF();
-                                while (this.server.GetPlayer(message).getData().getRole().getCharacter().equals(Position.CITYDOCTOR))
-                                {
-                                    out.writeUTF("You have healed yourself once before-Choose someone else");
-                                    message = in.readUTF();
-                                }
+                                ExitMode = true;
+                                break;
                             }
                         }
-                        choosenPlayer=message;
-                        ChoosePlayerMode = false;
                     }
                     else if(this.getData().getRole().getCharacter().equals(Position.DETECTIVE))
                     {
@@ -313,15 +371,21 @@ public class UserThread extends Thread{
                             }
                             else
                             {
-                                choosenPlayer=message;
                                 ChoosePlayerMode = false;
                                 validity=true;
+                                out.writeUTF("Done");
                             }
                             if(validity)
                             {
                             }
                             else {
                                 message=in.readUTF();
+                                if(message.equals("Exit"))
+                                {
+                                    ExitMode = true;
+                                    ChoosePlayerMode=false;
+                                    break;
+                                }
                             }
                         }
                     }
@@ -332,6 +396,10 @@ public class UserThread extends Thread{
                             out.writeUTF("Choose the player you want to kill");
                             out.writeUTF(this.server.GetAllplayers());
                             message= in.readUTF();
+                            if(message.equals("Exit"))
+                            {
+                                break;
+                            }
                             boolean validity = false;
                             while (!validity)
                             {
@@ -355,6 +423,12 @@ public class UserThread extends Thread{
                                 }
                                 else {
                                     message=in.readUTF();
+                                    if(message.equals("Exit"))
+                                    {
+                                        ExitMode = true;
+                                        ChoosePlayerMode=false;
+                                        break;
+                                    }
                                 }
                             }
                         }
@@ -370,6 +444,10 @@ public class UserThread extends Thread{
                             out.writeUTF("Choose the player you want to mute");
                             out.writeUTF(this.server.GetAllplayers());
                             message= in.readUTF();
+                            if(message.equals("Exit"))
+                            {
+                                break;
+                            }
                             boolean validity = false;
                             while (!validity)
                             {
@@ -393,6 +471,12 @@ public class UserThread extends Thread{
                                 }
                                 else {
                                     message=in.readUTF();
+                                    if(message.equals("Exit"))
+                                    {
+                                        ExitMode = true;
+                                        ChoosePlayerMode=false;
+                                        break;
+                                    }
                                 }
                             }
                         }
@@ -456,17 +540,14 @@ public class UserThread extends Thread{
                     {
                         this.Receive(this.server.LoadAll());
                     }
-//                    if(message.equals("Exit"))
-//                    {
-//                        out.writeUTF("Close");
-//                        socket.close();
-//                        server.RemoveThread(this,"Normal");
-//                        break;
-//                    }
                     if(!message.equals("History"))
                     {
                         this.server.SendAll(message,this);
                     }
+                }
+                if(ExitMode)
+                {
+                    break;
                 }
             }
             out.writeUTF("Close");
@@ -512,14 +593,29 @@ public class UserThread extends Thread{
 
         }
     }
+
+    /**
+     * Receive.
+     *
+     * @param str the str
+     */
     public synchronized void Receive(String str)
     {
         try {
             this.out.writeUTF(str);
-        } catch (IOException exception) {
+        }catch (SocketException e)
+        {
+            System.err.println("Socket is closed");
+        }
+        catch (IOException exception) {
             System.err.println("Error in Receive");
         }
     }
+
+    /**
+     * Ask ready
+     * if player is ready at start of the game ,...
+     */
     public void AskReady()
     {
         try{
@@ -540,90 +636,231 @@ public class UserThread extends Thread{
         }
 
     }
+
+    /**
+     * Choose player string.
+     *
+     * @return the string
+     */
     public synchronized String ChoosePlayer()
     {
             return choosenPlayer;
     }
+
+    /**
+     * Mafia vote string.
+     *
+     * @return the string
+     */
     public synchronized String MafiaVote()
     {
         return this.MafiaVote;
     }
+
+    /**
+     * Poll string.
+     *
+     * @return the string
+     */
     public synchronized String poll()
     {
         return poll;
     }
+
+    /**
+     * Watch string.
+     *
+     * @return the string
+     */
     public String Watch()
     {
         return Watch;
     }
+
+    /**
+     * Mayor decision string.
+     *
+     * @return the string
+     */
     public synchronized String MayorDecision()
     {
         return this.MayorDecision;
     }
+
+    /**
+     * Sets sleep.
+     *
+     * @param sleep the sleep
+     */
     public void setSleep(int sleep) {
         this.sleep = sleep;
     }
 
+    /**
+     * Gets sleep.
+     *
+     * @return the sleep
+     */
     public int getSleep() {
         return sleep;
     }
+
+    /**
+     * Sets data.
+     *
+     * @param data the data
+     */
     public void setData(PlayerData data) {
         this.data = data;
     }
+
+    /**
+     * Gets data.
+     *
+     * @return the data
+     */
     public PlayerData getData() {
         return data;
     }
+
+    /**
+     * Is registered boolean.
+     *
+     * @return the boolean
+     */
     public boolean isRegistered() {
         return isRegistered;
     }
+
+    /**
+     * Sets registered.
+     *
+     * @param registered the registered
+     */
     public void setRegistered(boolean registered) {
         isRegistered = registered;
     }
+
+    /**
+     * Sets choose player mode.
+     *
+     * @param choosePlayerMode the choose player mode
+     */
     public void setChoosePlayerMode(boolean choosePlayerMode) {
         ChoosePlayerMode = choosePlayerMode;
     }
+
+    /**
+     * Sets choosen player.
+     *
+     * @param choosenPlayer the choosen player
+     */
     public void setChoosenPlayer(String choosenPlayer) {
         this.choosenPlayer = choosenPlayer;
     }
+
+    /**
+     * Is choose player mode boolean.
+     *
+     * @return the boolean
+     */
     public boolean isChoosePlayerMode() {
         return ChoosePlayerMode;
     }
 
+    /**
+     * Sets voting mode.
+     *
+     * @param votingMode the voting mode
+     */
     public void setVotingMode(boolean votingMode) {
         VotingMode = votingMode;
     }
+
+    /**
+     * Is voting mode boolean.
+     *
+     * @return the boolean
+     */
     public boolean isVotingMode() {
         return VotingMode;
     }
+
+    /**
+     * Sets mafia voting mode.
+     *
+     * @param mafiaVotingMode the mafia voting mode
+     */
     public void setMafiaVotingMode(boolean mafiaVotingMode) {
         MafiaVotingMode = mafiaVotingMode;
     }
+
+    /**
+     * Is mafia voting mode boolean.
+     *
+     * @return the boolean
+     */
     public boolean isMafiaVotingMode() {
         return MafiaVotingMode;
     }
 
+    /**
+     * Sets mayor mode.
+     *
+     * @param mayorMode the mayor mode
+     */
     public void setMayorMode(boolean mayorMode) {
         MayorMode = mayorMode;
     }
+
+    /**
+     * Sets dead mode.
+     *
+     * @param deadMode the dead mode
+     */
     public void setDeadMode(boolean deadMode) {
         DeadMode = deadMode;
     }
 
+    /**
+     * Sets poll.
+     *
+     * @param poll the poll
+     */
     public void setPoll(String poll) {
         this.poll = poll;
     }
 
+    /**
+     * Sets mafia vote.
+     *
+     * @param mafiaVote the mafia vote
+     */
     public void setMafiaVote(String mafiaVote) {
         MafiaVote = mafiaVote;
     }
 
+    /**
+     * Sets vote.
+     *
+     * @param vote the vote
+     */
     public void setVote(String vote) {
         Vote = vote;
     }
+
+    /**
+     * Sets mayor decision.
+     *
+     * @param mayorDecision the mayor decision
+     */
     public void setMayorDecision(String mayorDecision) {
         MayorDecision = mayorDecision;
     }
 
+    /**
+     * Disconnect the socket.
+     */
     public void Disconnect()
     {
         try {
@@ -636,6 +873,12 @@ public class UserThread extends Thread{
             System.err.println("Error while disconnecting in userthread");
         }
     }
+
+    /**
+     * Is mayor mode boolean.
+     *
+     * @return the boolean
+     */
     public boolean isMayorMode() {
         return MayorMode;
     }
