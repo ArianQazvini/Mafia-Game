@@ -6,6 +6,8 @@ import com.company.Mafias.Mafia;
 import com.company.Mafias.SimpleMafia;
 import com.company.PlayerData;
 import com.company.TimeCounter;
+
+import javax.sound.sampled.*;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -194,13 +196,14 @@ public class Server extends Thread {
                 AskReady();
                 while (!CanStartGame())
                 {
-                    System.out.println("Server is waiting for player to get ready..");
+                    //System.out.println("Server is waiting for player to get ready..");
                     Thread.sleep(1500);
                     if(CanStartGame())
                         break;
                 }
                 SendAll("---------------------------");
                 SendAll(CYAN+"Game is going to start..."+RESET);
+                MusicThread("The Godfather Main Title.wav");
                 SendAll("---------------------------");
                 SendAll(BLUE+"***Introduction Night***"+RESET);
                 MuteAll();
@@ -228,7 +231,7 @@ public class Server extends Thread {
                     Mayor();
                     if(Ended()!=null)
                     {
-                        ForceSendAll("The winner is"+Ended());
+                        ForceSendAll(CYAN+"The winner is"+Ended()+RESET);
                         break;
                     }
                     while (!canResume())
@@ -243,8 +246,11 @@ public class Server extends Thread {
                         Delay(40);
                         MuteAll();
                     }
-                    MafiaVoting();
-                    Delay(30);
+                    if(Contains(Position.GODFATHER) && (Contains(Position.LECTER) || Contains(Position.SIMPLE_MAFIA)))
+                    {
+                        MafiaVoting();
+                        Delay(30);
+                    }
                     GodFather();
                     DrLecter();
                     CityDoctor();
@@ -265,7 +271,7 @@ public class Server extends Thread {
                     Thread.sleep(1000);
                     if(Ended()!=null)
                     {
-                        ForceSendAll("The winner is"+Ended());
+                        ForceSendAll(CYAN+"The winner is"+Ended()+RESET);
                         break;
                     }
                     while (!canResume())
@@ -273,7 +279,6 @@ public class Server extends Thread {
                         Thread.sleep(1500);
                     }
                 }
-                Close();
                 //Voting();
                 //Mayor();
 
@@ -941,8 +946,6 @@ public class Server extends Thread {
      */
     private void MafiaVoting()
     {
-        if(Contains(Position.GODFATHER) && (Contains(Position.LECTER) || Contains(Position.SIMPLE_MAFIA)))
-        {
             for (int i=0;i<userThreads.size();i++)
             {
                 if(userThreads.get(i).getData().getRole().getCharacter().equals(Position.LECTER) || userThreads.get(i).getData().getRole().getCharacter().equals(Position.SIMPLE_MAFIA))
@@ -950,10 +953,6 @@ public class Server extends Thread {
                     MafiaVotingThread(i);
                 }
             }
-        }
-        else
-        {
-        }
     }
 
     /**
@@ -1517,14 +1516,14 @@ public class Server extends Thread {
      */
     private void Delay(int seconds)
     {
-        Timer timer = new Timer();
-        timer.schedule(new TimeCounter(),0,1000);
+      //  Timer timer = new Timer();
+       // timer.schedule(new TimeCounter(),0,1000);
         try {
             Thread.sleep(seconds* 1000L);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        timer.cancel();
+     //   timer.cancel();
     }
 
     /**
@@ -1532,7 +1531,7 @@ public class Server extends Thread {
      * @param p given character
      * @return true or false
      */
-    private boolean Contains(Position p)
+    public boolean Contains(Position p)
     {
         for (int i=0;i<userThreads.size();i++)
         {
@@ -1596,6 +1595,55 @@ public class Server extends Thread {
             return false;
         else
             return true;
+    }
+    private void MusicThread(String filepath)
+    {
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    File music = new File(filepath);
+                    AudioInputStream audios = AudioSystem.getAudioInputStream(music);
+                    Clip clip= AudioSystem.getClip();
+                    clip.open(audios);
+                    clip.start();
+                    clip.loop(Clip.LOOP_CONTINUOUSLY);
+                    Scanner scanner = new Scanner(System.in);
+                    String temp="";
+                    long help2=0;
+                    while (true)
+                    {
+                        temp = scanner.nextLine();
+                        if(temp.equals("Pause"))
+                        {
+                            long help = clip.getMicrosecondPosition();
+                            help2 = help;
+                            clip.stop();
+                        }
+                        else if (temp.equals("Resume"))
+                        {
+                            clip.setMicrosecondPosition(help2);
+                            clip.start();
+                            clip.loop(Clip.LOOP_CONTINUOUSLY);
+                        }
+                        else if(temp.equals("Stop"))
+                        {
+                            clip.stop();
+                            break;
+                        }
+                    }
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                } catch (IOException exception) {
+                    exception.printStackTrace();
+                } catch (UnsupportedAudioFileException e) {
+                    e.printStackTrace();
+                } catch (LineUnavailableException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        thread.start();
     }
     /**
      * close the game

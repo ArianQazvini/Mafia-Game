@@ -274,7 +274,17 @@ public class UserThread extends Thread{
                                 }
                                 else
                                 {
-                                    out.writeUTF("You have healed yourself once before-Choose someone else");
+                                    if(this.server.Contains(Position.GODFATHER)|| this.server.Contains(Position.SIMPLE_MAFIA))
+                                    {
+                                        out.writeUTF("You have healed yourself once before-Choose someone else");
+                                    }
+                                    else
+                                    {
+                                        out.writeUTF("You can't use your ability");
+                                        validity=true;
+                                        ChoosePlayerMode=false;
+                                    }
+
                                 }
                             }
                             else
