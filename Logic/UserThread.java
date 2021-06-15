@@ -371,6 +371,8 @@ public class UserThread extends Thread{
                             }
                             else
                             {
+                                Detective temp = (Detective)this.data.getRole();
+                                out.writeUTF(temp.action(this.server.GetPlayer(message)));
                                 ChoosePlayerMode = false;
                                 validity=true;
                                 out.writeUTF("Done");
@@ -461,6 +463,7 @@ public class UserThread extends Thread{
                                 }
                                 else {
                                     Psychologist temp = (Psychologist) this.getData().getRole();
+                                    this.server.setPsychologistChoice(message);
                                     temp.action(server.GetPlayer(message));
                                     validity=true;
                                     out.writeUTF("Done");

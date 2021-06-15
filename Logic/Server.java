@@ -25,7 +25,7 @@ public class Server extends Thread {
     private ArrayList<UserThread> Dead = new ArrayList<>();
     private ArrayList<UserThread> Watchers = new ArrayList<>();
     private ArrayList<Role> roles = new ArrayList<>();
-    private UserThread PsychologistChoice=null;
+    private String PsychologistChoice=null;
     private HashMap<String , ArrayList<UserThread>> poll = new HashMap<>();
     private ServerSocket serverSocket = null;
     private String name;
@@ -217,6 +217,7 @@ public class Server extends Thread {
                     UnMuteAll(this.PsychologistChoice);
                     Delay(60);
                     MuteAll();
+                    this.PsychologistChoice=null;
                     this.PublicChatMode = false;
                     ForceSendAll(PURPLE+"***Voting time***"+RESET);
                     ForceSendAll(PURPLE+"***30 seconds for voting***"+RESET);
@@ -235,10 +236,13 @@ public class Server extends Thread {
                         Thread.sleep(1500);
                     }
                     ForceSendAll(BLUE+"***Night***"+RESET);
-                    UnMuteMafia();
-                    SendAll("You have only 40 seconds for chatting");
-                    Delay(40);
-                    MuteAll();
+                    if(MafiaSizeChat())
+                    {
+                        UnMuteMafia();
+                        SendAll("You have only 40 seconds for chatting");
+                        Delay(40);
+                        MuteAll();
+                    }
                     MafiaVoting();
                     Delay(30);
                     GodFather();
@@ -257,6 +261,7 @@ public class Server extends Thread {
                     NightState();
                     UpdateDead();
                     announcement();
+                    this.anouncement=false;
                     Thread.sleep(1000);
                     if(Ended()!=null)
                     {
@@ -1336,7 +1341,7 @@ public class Server extends Thread {
      * unmute all players except a specified player
      * @param except specified player
      */
-    private void UnMuteAll(UserThread except)
+    private void UnMuteAll(String except)
     {
         if(except==null)
         {
@@ -1349,7 +1354,7 @@ public class Server extends Thread {
         {
             for (int i=0;i<userThreads.size();i++)
             {
-                if(userThreads.get(i).equals(except))
+                if(userThreads.get(i).getData().getUsername().equals(except))
                 {
                 }
                 else
@@ -1571,7 +1576,27 @@ public class Server extends Thread {
             return null;
         }
     }
-
+    public void setPsychologistChoice(String psychologistChoice) {
+        PsychologistChoice = psychologistChoice;
+    }
+    public String getPsychologistChoice() {
+        return PsychologistChoice;
+    }
+    private boolean MafiaSizeChat()
+    {
+        int count =0;
+        for (int i=0;i<userThreads.size();i++)
+        {
+            if(userThreads.get(i).getData().getRole() instanceof Mafia)
+            {
+                count++;
+            }
+        }
+        if(count==1)
+            return false;
+        else
+            return true;
+    }
     /**
      * close the game
      */
@@ -1582,6 +1607,11 @@ public class Server extends Thread {
         {
             UserThread temp = it.next();
             temp.Disconnect();
+            try {
+                Thread.sleep(700);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
     }
 }

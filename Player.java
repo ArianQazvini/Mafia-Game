@@ -9,14 +9,26 @@ import java.sql.ResultSet;
 import java.util.Scanner;
 import java.util.Set;
 
+/**
+ * Player class.
+ * which gets messages from player and send it to server
+ * and also recieve messages from server
+ */
 public class Player {
 
-    private Socket connection;
+    private Socket connection; // client's socket
     private Thread read;
     private Thread send;
     private boolean connected= true;
     private DataOutputStream out = null;
     private DataInputStream in = null;
+
+    /**
+     * Instantiates a new Player.
+     *
+     * @param ip   the ip
+     * @param port the port
+     */
     public Player(String ip,int port) {
         try {
             connection = new Socket(ip,port );
@@ -29,6 +41,10 @@ public class Player {
             System.err.println("IO Error -Player constructor");
         }
     }
+
+    /**
+     * Start player.
+     */
     public void startPlayer()
     {
         if(connection!= null)
@@ -37,6 +53,10 @@ public class Player {
             Send();
         }
     }
+
+    /**
+     * Send messages.
+     */
     public void Send()
     {
         Scanner scanner = new Scanner(System.in);
@@ -83,6 +103,10 @@ public class Player {
         });
         this.send.start();
     }
+
+    /**
+     * Read messages from server.
+     */
     public void Read()
     {
         this.read  = new Thread(new Runnable() {
@@ -122,15 +146,38 @@ public class Player {
         this.read.start();
     }
 
+    /**
+     * Sets connected.
+     *
+     * @param connected the connected
+     */
     public void setConnected(boolean connected) {
         this.connected = connected;
     }
+
+    /**
+     * Is connected boolean.
+     *
+     * @return the boolean
+     */
     public boolean isConnected() {
         return connected;
     }
+
+    /**
+     * Gets in stream.
+     *
+     * @return the in
+     */
     public DataInputStream getIn() {
         return in;
     }
+
+    /**
+     * Gets out stream.
+     *
+     * @return the out
+     */
     public DataOutputStream getOut() {
         return out;
     }
